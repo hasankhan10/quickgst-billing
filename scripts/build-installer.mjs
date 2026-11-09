@@ -32,7 +32,19 @@ const STAGE_ROOT = join(ROOT, 'release-build', 'installer-stage');
 const APP = join(STAGE_ROOT, 'QuickGST-Billing', '_system');
 const CACHE = join(ROOT, '.installer-cache');
 
-const fail = (msg) => { console.error(`\n  x ${msg}\n`); process.exit(1); };
+const fail = (msg) => {
+  console.error(`::error file=scripts/build-installer.mjs::${msg}`);
+  console.error(`\n  x ${msg}\n`);
+  process.exit(1);
+};
+process.on('uncaughtException', (err) => {
+  console.error(`::error file=scripts/build-installer.mjs::Uncaught exception: ${err?.stack || err?.message || err}`);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error(`::error file=scripts/build-installer.mjs::Unhandled rejection: ${reason?.stack || reason?.message || reason}`);
+  process.exit(1);
+});
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', cwd: ROOT, ...opts });
 
 if (process.platform !== 'win32') fail('The Windows Setup is built on Windows (Inno Setup).');
@@ -42,6 +54,8 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`Version "${version}" is not like 1.1
 function findIscc() {
   const places = [
     process.env.ISCC,
+    'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe',
+    'C:\\Program Files\\Inno Setup 6\\ISCC.exe',
     join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 6', 'ISCC.exe'),
     join(process.env['ProgramFiles(x86)'] || '', 'Inno Setup 6', 'ISCC.exe'),
     join(process.env.ProgramFiles || '', 'Inno Setup 6', 'ISCC.exe'),

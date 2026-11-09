@@ -22,16 +22,7 @@ jobs:
           node-version: 22
 
       - name: Install Inno Setup
-        shell: powershell
-        run: |
-          choco install innosetup -y --no-progress
-          if (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe") {
-            "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
-            "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe" >> $env:GITHUB_ENV
-          } elseif (Test-Path "C:\Program Files\Inno Setup 6\ISCC.exe") {
-            "C:\Program Files\Inno Setup 6" >> $env:GITHUB_PATH
-            "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe" >> $env:GITHUB_ENV
-          }
+        run: choco install innosetup -y --no-progress
 
       - name: Install dependencies
         run: npm ci
