@@ -60,13 +60,13 @@
 
 [Setup]
 AppId={code:GetAppId}
-AppName=Free GST Billing
+AppName=QuickGST Billing
 AppVersion={#AppVersion}
-AppVerName=Free GST Billing {#AppVersion}
-AppPublisher=DiceCodes
-AppPublisherURL=https://github.com/IamRamgarhia/Free-GST-Billing-Software
-AppSupportURL=https://github.com/IamRamgarhia/Free-GST-Billing-Software/issues
-AppUpdatesURL=https://github.com/IamRamgarhia/Free-GST-Billing-Software/releases
+AppVerName=QuickGST Billing {#AppVersion}
+AppPublisher=Stova Media
+AppPublisherURL=https://stovamedia.com
+AppSupportURL=https://stovamedia.com
+AppUpdatesURL=https://github.com/hasankhan10/quickgst-billing/releases
 DefaultDirName={code:GetAppDir}
 UsePreviousAppDir=no
 UsePreviousLanguage=no
@@ -74,12 +74,12 @@ DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ; Review M1: two Setups at once never run (one could undo the other's copy).
-SetupMutex=FreeGSTBillingSetup
+SetupMutex=QuickGSTBillingSetup
 OutputDir={#OutputDir}
-OutputBaseFilename=Free-GST-Billing-Windows-Setup
+OutputBaseFilename=QuickGST-Windows-Setup
 SetupIconFile={#StageDir}\app-icon.ico
 UninstallDisplayIcon={app}\app-icon.ico
-UninstallDisplayName=Free GST Billing
+UninstallDisplayName=QuickGST Billing
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern

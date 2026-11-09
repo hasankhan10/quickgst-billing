@@ -1,0 +1,56 @@
+name: Build & Release QuickGST Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Package Release ZIP
+        run: node scripts/build-release-zip.mjs
+
+      - name: Setup Inno Setup
+        uses: chride/actions-setup-inno-setup@v1
+
+      - name: Download WebView2 Evergreen Bootstrapper
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path .installer-cache/webview2-bootstrapper
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile ".installer-cache/webview2-bootstrapper/MicrosoftEdgeWebview2Setup.exe"
+
+      - name: Build Windows Setup .EXE
+        run: node scripts/build-installer.mjs --skip-build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: QuickGST Billing ${{ github.ref_name }} (Built by Stova Media)
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-build/QuickGST-Billing.zip
+            release-build/QuickGST-Windows-Setup.exe
+            release-build/QuickGST-Windows-Setup.exe.sha256
