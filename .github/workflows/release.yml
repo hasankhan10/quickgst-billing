@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          choco install innosetup -y
+          "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Install dependencies
         run: npm ci
 
@@ -30,12 +36,12 @@ jobs:
       - name: Package Release ZIP
         run: node scripts/build-release-zip.mjs
 
-      - name: Setup Inno Setup
-        uses: chride/actions-setup-inno-setup@v1
-
-      - name: Download WebView2 Evergreen Bootstrapper
+      - name: Prepare WebView2 SDK & Bootstrapper Cache
         shell: powershell
         run: |
+          New-Item -ItemType Directory -Force -Path .installer-cache/webview2-sdk/pkg
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.4258.31" -OutFile ".installer-cache/webview2-sdk.zip"
+          tar -xf ".installer-cache/webview2-sdk.zip" -C ".installer-cache/webview2-sdk/pkg"
           New-Item -ItemType Directory -Force -Path .installer-cache/webview2-bootstrapper
           Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile ".installer-cache/webview2-bootstrapper/MicrosoftEdgeWebview2Setup.exe"
 
