@@ -225,7 +225,7 @@ static class Program
         try
         {
             Mutex m;
-            if (!Mutex.TryOpenExisting("FreeGSTBillingSetup", out m)) return false;
+            if (!Mutex.TryOpenExisting("QuickGSTBillingSetup", out m)) return false;
             m.Dispose();
             return true;
         }
@@ -293,7 +293,7 @@ static class Program
     {
         Smoke("mode=fallback\r\nwhy=" + why + "\r\n");
         try { Process.Start(Launcher("-AppWindow -Hidden")); }
-        catch (Exception e) { MessageBox.Show("Free GST Billing could not start: " + e.Message, "Free GST Billing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        catch (Exception e) { MessageBox.Show("QuickGST Billing could not start: " + e.Message, "QuickGST Billing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
     }
 
     // Runs the launcher; returns { url or null, everything it printed }.
@@ -363,16 +363,16 @@ class MainForm : Form
     public MainForm(string runtime, string eventName)
     {
         this.runtime = runtime;
-        Text = "Free GST Billing";
+        Text = "QuickGST Billing";
         BackColor = Splash.Back;
         try { Icon = new Icon(Path.Combine(Program.AppDir, "app-icon.ico")); } catch (Exception) { }
         // The icon near the clock: click = the window; right-click = Open / Quit.
         tray.Icon = Icon;
-        tray.Text = "Free GST Billing";
+        tray.Text = "QuickGST Billing";
         ContextMenuStrip menu = new ContextMenuStrip();
         ToolStripItem version = menu.Items.Add(VersionText());
         version.Enabled = false;
-        ToolStripItem open = menu.Items.Add("Open Free GST Billing", null, delegate { ShowFromTray(); });
+        ToolStripItem open = menu.Items.Add("Open QuickGST Billing", null, delegate { ShowFromTray(); });
         open.Font = new Font(open.Font, FontStyle.Bold);
         menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(); });
         menu.Items.Add("Open books folder", null, delegate { OpenBooksFolder(); });
@@ -631,7 +631,7 @@ class MainForm : Form
             healthMisses = 0;
             Program.Trace("repair skipped: the server is busy, not stopped");
             if ((DateTime.Now - busySince).TotalMinutes >= 3)
-                Problem("Free GST Billing is not answering. Wait a minute, or right-click its icon near the clock, choose Quit, and open it again. Your books are safe.");
+                Problem("QuickGST Billing is not answering. Wait a minute, or right-click its icon near the clock, choose Quit, and open it again. Your books are safe.");
             return;
         }
         busySince = DateTime.MinValue;
@@ -898,7 +898,7 @@ class MainForm : Form
         box.ScrollBars = ScrollBars.Vertical;
         box.Dock = DockStyle.Fill;
         box.Font = new Font("Segoe UI", 11f);
-        box.Text = "Free GST Billing could not start.\r\n\r\n" + text.Replace("\r\n", "\n").Replace("\n", "\r\n");
+        box.Text = "QuickGST Billing could not start.\r\n\r\n" + text.Replace("\r\n", "\n").Replace("\n", "\r\n");
         status.Visible = false;
         web.Visible = false;
         Controls.Add(box);
@@ -940,7 +940,7 @@ class MainForm : Form
 }
 
 // The start screen, also shown over the page while the app starts again: the
-// app's icon, its name, a thin moving bar and "by DiceCodes". Light or dark
+// app's icon, its name, a thin moving bar and "Built by Stova Media". Light or dark
 // like the app's own theme (Settings; kept in the books folder's
 // data\local-prefs.json, light when not set) and the app's own background,
 // so there is no flash. The logo is read into memory (never left open), so an
@@ -1004,7 +1004,7 @@ class Splash : Control
         using (Font name = new Font("Segoe UI Semibold", 18f))
         using (Font by = new Font("Segoe UI", 9f))
         {
-            const string title = "Free GST Billing";
+            const string title = "QuickGST Billing";
             SizeF ts = g.MeasureString(title, name);
             int block = logoSize + gap1 + (int)ts.Height + gap2 + barH;
             int top = Math.Max((int)(12 * s), (Height - block) / 2 - (int)(24 * s));
@@ -1020,8 +1020,8 @@ class Splash : Control
             g.SetClip(bar);
             using (Brush b = new SolidBrush(blue)) g.FillRectangle(b, x, bar.Y, seg, barH);
             g.ResetClip();
-            SizeF bs = g.MeasureString("by DiceCodes", by);
-            using (Brush b = new SolidBrush(muted)) g.DrawString("by DiceCodes", by, b, cx - bs.Width / 2, Height - bs.Height - (int)(28 * s));
+            SizeF bs = g.MeasureString("Built by Stova Media", by);
+            using (Brush b = new SolidBrush(muted)) g.DrawString("Built by Stova Media", by, b, cx - bs.Width / 2, Height - bs.Height - (int)(28 * s));
         }
     }
 

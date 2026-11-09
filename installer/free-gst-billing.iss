@@ -76,7 +76,7 @@ PrivilegesRequired=lowest
 ; Review M1: two Setups at once never run (one could undo the other's copy).
 SetupMutex=QuickGSTBillingSetup
 OutputDir={#OutputDir}
-OutputBaseFilename=QuickGST-Windows-Setup
+OutputBaseFilename=QuickGST-Billing-Windows-Setup
 SetupIconFile={#StageDir}\app-icon.ico
 UninstallDisplayIcon={app}\app-icon.ico
 UninstallDisplayName=QuickGST Billing
@@ -89,12 +89,12 @@ MinVersion=10.0
 CloseApplications=no
 RestartApplications=no
 VersionInfoVersion={#AppVersion}
-VersionInfoProductName=Free GST Billing
-VersionInfoCompany=DiceCodes
+VersionInfoProductName=QuickGST Billing
+VersionInfoCompany=Stova Media
 
 [Tasks]
-Name: desktopicon; Description: "Put a Free GST Billing icon on the Desktop"
-Name: startup; Description: "Open Free GST Billing when Windows starts"; Flags: unchecked
+Name: desktopicon; Description: "Put a QuickGST Billing icon on the Desktop"
+Name: startup; Description: "Open QuickGST Billing when Windows starts"; Flags: unchecked
 
 [Files]
 ; First, so Setup can unpack them quickly to look for an earlier copy.
@@ -108,18 +108,18 @@ Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs c
 ; (No [InstallDelete]: old program files go only after the new ones are in -
 ; see "prune" in CurStepChanged. A failed update leaves a working app.)
 
-; The icons open the app's own window, Free GST Billing.exe (installer\host):
+; The icons open the app's own window, QuickGST Billing.exe (installer\host):
 ; it starts the server through start-windows.ps1 and shows the app with
 ; WebView2 (without WebView2: Edge's app window, as before). The same
 ; AppUserModelID as the window, so a pinned taskbar icon is this program.
 [Icons]
-Name: "{code:IconDir|programs}\Free GST Billing"; Filename: "{app}\Free GST Billing.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "Free GST Billing Software"; AppUserModelID: "{code:GetAumid}"
-Name: "{code:IconDir|desktop}\Free GST Billing"; Filename: "{app}\Free GST Billing.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "Free GST Billing Software"; AppUserModelID: "{code:GetAumid}"; Tasks: desktopicon; Check: DesktopOK
+Name: "{code:IconDir|programs}\QuickGST Billing"; Filename: "{app}\QuickGST Billing.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "QuickGST Billing Software - Built by Stova Media"; AppUserModelID: "{code:GetAumid}"
+Name: "{code:IconDir|desktop}\QuickGST Billing"; Filename: "{app}\QuickGST Billing.exe"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "QuickGST Billing Software - Built by Stova Media"; AppUserModelID: "{code:GetAumid}"; Tasks: desktopicon; Check: DesktopOK
 ; At Windows start-up: the server starts and the app waits near the clock (/tray).
-Name: "{code:IconDir|startup}\Free GST Billing"; Filename: "{app}\Free GST Billing.exe"; Parameters: "/tray"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "Free GST Billing Software"; AppUserModelID: "{code:GetAumid}"; Tasks: startup
+Name: "{code:IconDir|startup}\QuickGST Billing"; Filename: "{app}\QuickGST Billing.exe"; Parameters: "/tray"; WorkingDir: "{app}"; IconFilename: "{app}\app-icon.ico"; Comment: "QuickGST Billing Software - Built by Stova Media"; AppUserModelID: "{code:GetAumid}"; Tasks: startup
 
 [Run]
-Filename: "{app}\Free GST Billing.exe"; WorkingDir: "{app}"; Description: "Open Free GST Billing now"; Flags: postinstall nowait skipifsilent; Check: MayStart
+Filename: "{app}\QuickGST Billing.exe"; WorkingDir: "{app}"; Description: "Open QuickGST Billing now"; Flags: postinstall nowait skipifsilent; Check: MayStart
 ; A silent run (an update started from the app): start the server, open no
 ; second window - the app's window reloads by itself.
 Filename: "{win}\System32\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\start-windows.ps1"" -NoWindow -Hidden"; WorkingDir: "{app}"; Flags: nowait runhidden; Check: MayStartSilent
@@ -141,8 +141,8 @@ Type: dirifempty; Name: "{code:HostDataDir}"
 [Code]
 const
   TestPortDefault = '47461';
-  LogName = 'Free GST Billing - install log.txt';
-  IconName = 'Free GST Billing.lnk';
+  LogName = 'QuickGST Billing - install log.txt';
+  IconName = 'QuickGST Billing.lnk';
 
 var
   TestRoot, TestPort, AppDirValue: String;
@@ -170,7 +170,7 @@ end;
 
 function GetAppId(Param: String): String;
 begin
-  if IsTest then Result := 'FreeGSTBilling-TEST' else Result := 'FreeGSTBilling';
+  if IsTest then Result := 'QuickGSTBilling-TEST' else Result := 'QuickGSTBilling';
 end;
 
 function GetAppDir(Param: String): String;
@@ -182,13 +182,13 @@ end;
   the same two) and its own folder: WebView2 profile, window place. }
 function GetAumid(Param: String): String;
 begin
-  if IsTest then Result := 'DiceCodes.FreeGSTBilling.Test' else Result := 'DiceCodes.FreeGSTBilling';
+  if IsTest then Result := 'StovaMedia.QuickGSTBilling.Test' else Result := 'StovaMedia.QuickGSTBilling';
 end;
 
 function HostDataDir(Param: String): String;
 begin
-  if IsTest then Result := TestRoot + '\LocalAppData\Free GST Billing'
-  else Result := ExpandConstant('{localappdata}\Free GST Billing');
+  if IsTest then Result := TestRoot + '\LocalAppData\QuickGST Billing'
+  else Result := ExpandConstant('{localappdata}\QuickGST Billing');
 end;
 
 function IconDir(Param: String): String;
@@ -206,14 +206,14 @@ begin
   end;
 end;
 
-{ The user's own folder (C:\Users\<name>\Free GST Billing), not Documents:
+{ The user's own folder (C:\Users\<name>\QuickGST Billing), not Documents:
   Windows Security's "Controlled folder access" blocks unknown programs from
   writing in Documents and Desktop, so books there could not be saved (seen on
   the maintainer's PC, 4 Nov 2026). }
 function BooksHome: String;
 begin
-  if IsTest then Result := TestRoot + '\Free GST Billing'
-  else Result := ExpandConstant('{%USERPROFILE}\Free GST Billing');
+  if IsTest then Result := TestRoot + '\QuickGST Billing'
+  else Result := ExpandConstant('{%USERPROFILE}\QuickGST Billing');
 end;
 
 { A desktop that Windows will not let Setup write on: skip the Desktop icon
@@ -429,7 +429,7 @@ var
   F, Dest: String;
 begin
   Result := '';
-  AddStr(Names, 'Free GST Billing.exe');
+  AddStr(Names, 'QuickGST Billing.exe');
   AddStr(Names, 'Microsoft.Web.WebView2.Core.dll');
   AddStr(Names, 'Microsoft.Web.WebView2.WinForms.dll');
   AddStr(Names, 'WebView2Loader.dll');

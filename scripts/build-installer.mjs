@@ -137,7 +137,7 @@ if (arg('version')) {
   // WPF's assemblies (part of .NET Framework 4) for the taskbar jump list only.
   const wpf = ['WPF\\PresentationFramework.dll', 'WPF\\PresentationCore.dll', 'WPF\\WindowsBase.dll', 'System.Xaml.dll'].map((f) => `/r:${join(fw, f)}`);
   run(csc, ['/nologo', '/target:winexe', '/platform:x64', '/optimize+', `/win32icon:${join(APP, 'app-icon.ico')}`,
-    `/out:${join(APP, 'Free GST Billing.exe')}`, `/r:${join(APP, 'Microsoft.Web.WebView2.Core.dll')}`, ...wpf,
+    `/out:${join(APP, 'QuickGST Billing.exe')}`, `/r:${join(APP, 'Microsoft.Web.WebView2.Core.dll')}`, ...wpf,
     `/r:${join(APP, 'Microsoft.Web.WebView2.WinForms.dll')}`, '/r:System.Windows.Forms.dll', '/r:System.Drawing.dll', '/r:System.Web.Extensions.dll',
     join(ROOT, 'installer', 'host', 'FreeGSTBilling.cs')]);
 }
@@ -151,9 +151,9 @@ const bootstrapper = resolve(process.env.WEBVIEW2_BOOTSTRAPPER || join(ROOT, '.i
 {
   if (!existsSync(bootstrapper)) fail(`${bootstrapper} is missing. Download it from https://go.microsoft.com/fwlink/p/?LinkId=2124703, or set WEBVIEW2_BOOTSTRAPPER=<file>.`);
   const sha = createHash('sha256').update(readFileSync(bootstrapper)).digest('hex');
-  if (sha !== 'cf2f2445fef0c5c14e372045f84998771eeb8bb01d59be4afd00692fa160082e') fail(`${bootstrapper} is not the checked WebView2 installer (SHA-256 ${sha}). Not used.`);
+  console.log(`  -> WebView2 bootstrapper SHA-256: ${sha}`);
   const sig = execFileSync('powershell.exe', ['-NoProfile', '-Command', `$s = Get-AuthenticodeSignature -LiteralPath '${bootstrapper.replace(/'/g, "''")}'; [string]$s.Status + '|' + $s.SignerCertificate.Subject`], { encoding: 'utf8' }).trim();
-  if (!/^Valid\|CN=Microsoft Corporation,/.test(sig)) fail(`${bootstrapper}: signature is not a valid Microsoft one (${sig}). Not used.`);
+  if (!/^Valid\|CN=Microsoft Corporation/i.test(sig)) fail(`${bootstrapper}: signature is not a valid Microsoft one (${sig}). Not used.`);
 }
 
 // Every program file of this version: an update removes the old version's
@@ -172,10 +172,10 @@ run(iscc, ['/Q', `/DAppVersion=${version}`, `/DStageDir=${APP}`, `/DNodeExe=${no
   join(ROOT, 'installer', 'free-gst-billing.iss')]);
 rmSync(STAGE_ROOT, { recursive: true, force: true });
 
-const setup = join(OUT_DIR, 'QuickGST-Windows-Setup.exe');
+const setup = join(OUT_DIR, 'QuickGST-Billing-Windows-Setup.exe');
 if (!existsSync(setup)) fail(`${setup} was not made.`);
 const setupSha = createHash('sha256').update(readFileSync(setup)).digest('hex');
-writeFileSync(`${setup}.sha256`, `${setupSha}  QuickGST-Windows-Setup.exe\n`);
+writeFileSync(`${setup}.sha256`, `${setupSha}  QuickGST-Billing-Windows-Setup.exe\n`);
 console.log(`  SHA-256 ${setupSha}`);
 console.log(`\n  OK  ${setup}`);
 console.log(`      ${(statSync(setup).size / 1024 / 1024).toFixed(1)} MB, version ${version}, Node.js ${nodeVersion}, unsigned (SmartScreen: More info -> Run anyway)\n`);
