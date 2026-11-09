@@ -12,7 +12,7 @@
 // release ZIP ships it (build-release-zip.mjs).
 import crypto from 'crypto';
 
-export const SETUP_NAME = 'QuickGST-Windows-Setup.exe';
+export const SETUP_NAME = 'QuickGST-Billing-Windows-Setup.exe';
 const REPO_DOWNLOADS = 'https://github.com/hasankhan10/quickgst-billing/releases/download/';
 export const DOWNLOAD_HOSTS = ['github.com', 'objects.githubusercontent.com', 'release-assets.githubusercontent.com'];
 
@@ -28,7 +28,7 @@ export function allowedDownloadUrl(url) {
 // The Setup asset in a GitHub "latest release" API answer: { url, size, sha256 }
 // or null. sha256 is '' when GitHub gives no digest for it.
 export function setupAssetFrom(release) {
-  const a = (release?.assets || []).find((x) => x?.name === SETUP_NAME);
+  const a = (release?.assets || []).find((x) => x?.name === SETUP_NAME || /^QuickGST.*Windows-Setup\.exe$/i.test(x?.name));
   if (!a || typeof a.browser_download_url !== 'string' || !a.browser_download_url.startsWith(REPO_DOWNLOADS)) return null;
   const digest = /^sha256:([0-9a-f]{64})$/i.exec(String(a.digest || ''));
   return { url: a.browser_download_url, size: Number(a.size) || 0, sha256: digest ? digest[1].toLowerCase() : '' };
