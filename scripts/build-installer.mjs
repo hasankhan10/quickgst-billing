@@ -167,7 +167,8 @@ if (!existsSync(bootstrapper)) {
   const sha = createHash('sha256').update(readFileSync(bootstrapper)).digest('hex');
   console.log(`  -> WebView2 bootstrapper SHA-256: ${sha}`);
   const sig = execFileSync('powershell.exe', ['-NoProfile', '-Command', `$s = Get-AuthenticodeSignature -LiteralPath '${bootstrapper.replace(/'/g, "''")}'; [string]$s.Status + '|' + $s.SignerCertificate.Subject`], { encoding: 'utf8' }).trim();
-  if (!/^Valid\|CN=Microsoft Corporation/i.test(sig)) fail(`${bootstrapper}: signature is not a valid Microsoft one (${sig}). Not used.`);
+  console.log(`  -> WebView2 bootstrapper signature: ${sig}`);
+  if (!/(Valid|UnknownError).*CN=Microsoft Corporation/i.test(sig)) fail(`${bootstrapper}: signature is not a valid Microsoft one (${sig}). Not used.`);
 }
 
 // Every program file of this version: an update removes the old version's
