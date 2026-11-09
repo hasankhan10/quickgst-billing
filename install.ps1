@@ -1,17 +1,10 @@
-# Free GST Billing - one-line install, update and repair for Windows.
+# QuickGST Billing - one-line install, update and repair for Windows (Built by Stova Media).
 #
 #   Press Windows + R, paste this line, press Enter:
-#   powershell -ExecutionPolicy Bypass -c "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/IamRamgarhia/Free-GST-Billing-Software/main/install.ps1 | iex"
-#
-# v1.10.83 - a file PowerShell fetches carries no "downloaded from the
-# internet" mark, so Windows SmartScreen shows no warning; and the release
-# ZIP now carries its own packages, so nothing here runs npm. The same line
-# installs, updates an existing install in place (its data is backed up first
-# and never touched), or repairs a half-done one. No administrator rights, no
-# registry, no service: everything stays under the user's own profile.
+#   powershell -ExecutionPolicy Bypass -c "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/hasankhan10/quickgst-billing/main/install.ps1 | iex"
 #
 # To remove the app (it asks before deleting any data):
-#   powershell -ExecutionPolicy Bypass -c "[Net.ServicePointManager]::SecurityProtocol='Tls12'; & ([scriptblock]::Create((irm https://raw.githubusercontent.com/IamRamgarhia/Free-GST-Billing-Software/main/install.ps1))) -Uninstall"
+#   powershell -ExecutionPolicy Bypass -c "[Net.ServicePointManager]::SecurityProtocol='Tls12'; & ([scriptblock]::Create((irm https://raw.githubusercontent.com/hasankhan10/quickgst-billing/main/install.ps1))) -Uninstall"
 #
 # `iex` cannot pass parameters, so settings come from environment variables:
 #   FREEGSTBILL_DIR   install into (or update) this folder
@@ -27,13 +20,10 @@
 param([switch]$Uninstall)
 
 $ErrorActionPreference = 'Stop'
-# Windows PowerShell 5.1 downloads about ten times slower while it draws its
-# own progress bar; this script prints its own.
 $ProgressPreference = 'SilentlyContinue'
-# PowerShell 5.1 may still default to TLS 1.0, which GitHub refuses.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$ZipUrl = 'https://github.com/IamRamgarhia/Free-GST-Billing-Software/releases/latest/download/Free-GST-Billing.zip'
+$ZipUrl = 'https://github.com/hasankhan10/quickgst-billing/releases/latest/download/QuickGST-Billing.zip'
 $Test = $env:FREEGSTBILL_TEST
 $NeedFreeMB = 600   # the ZIP, its unpacked copy, Node.js, and room to spare
 $script:KnownProblem = $false

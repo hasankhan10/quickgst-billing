@@ -38,10 +38,10 @@ const __filename = fileURLToPath(import.meta.url);
 const REPO_ROOT = resolve(__filename, '..', '..');
 const outArg = process.argv.find(a => a.startsWith('--outDir='));
 const OUT_DIR = resolve(REPO_ROOT, outArg ? outArg.split('=')[1] : 'release-build');
-const STAGING = join(OUT_DIR, 'Free-GST-Billing');
+const STAGING = join(OUT_DIR, 'QuickGST-Billing');
 const SYSTEM = join(STAGING, '_system');
 
-console.log('\n  Free GST Billing — Release ZIP Builder\n');
+console.log('\n  QuickGST Billing — Release ZIP Builder (Stova Media)\n');
 
 // --- Sanity checks ---
 const distPath = join(REPO_ROOT, 'dist');
@@ -157,7 +157,7 @@ copyFileSync(join(REPO_ROOT, 'src', 'utils', 'cashBook.js'), join(SYSTEM, 'src',
 // purchaseOrders.js, which imports ../utils.js only.
 // v1.10.84 - the books folder (home.txt), the one-server-per-books lock, and
 // makeDir (folders one level at a time, ERR-083).
-for (const f of ['purchasePayments.js', 'purchaseOrders.js', 'appHome.js', 'serverLock.js', 'setupDownload.js', 'makeDir.js']) {
+for (const f of ['purchasePayments.js', 'purchaseOrders.js', 'appHome.js', 'serverLock.js', 'setupDownload.js', 'makeDir.js', 'license.js']) {
   copyFileSync(join(REPO_ROOT, 'src', 'utils', f), join(SYSTEM, 'src', 'utils', f));
 }
 
@@ -338,29 +338,22 @@ if (process.argv.includes('--no-zip')) {
 }
 
 // --- ZIP it up ---
-const zipName = `Free-GST-Billing-v${version}.zip`;
+const zipName = 'QuickGST-Billing.zip';
 const zipPath = join(OUT_DIR, zipName);
 console.log(`  → Creating ${zipName}…`);
 assertUnixLineEndings([STAGING, SYSTEM]);
 try {
   if (process.platform === 'win32') {
-    // v1.10.66 — Windows' built-in tar.exe (bsdtar, present since Windows 10
-    // 1803) instead of Compress-Archive. Windows PowerShell 5.1's
-    // Compress-Archive stores entry names with BACKSLASHES, which the ZIP
-    // specification forbids. Windows tolerates that; unzip on Linux and macOS
-    // warns, and BusyBox or Archive Utility create single files literally
-    // named "Free-GST-Billing\_system\server.js". Every Linux / NAS install,
-    // and the new update-unix.sh, had to fight the package itself (#59).
     const tarExe = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
     if (!existsSync(tarExe)) {
       console.error(`  x ${tarExe} was not found. It ships with Windows 10 (1803) and later.`);
       process.exit(1);
     }
     // Argument arrays, no shell: nothing in a path is ever interpreted.
-    execFileSync(tarExe, ['-a', '-c', '-f', zipPath, '-C', OUT_DIR, 'Free-GST-Billing'], { stdio: 'inherit' });
+    execFileSync(tarExe, ['-a', '-c', '-f', zipPath, '-C', OUT_DIR, 'QuickGST-Billing'], { stdio: 'inherit' });
   } else {
     // Use system zip if available (macOS + most Linux).
-    execFileSync('zip', ['-qr', zipName, 'Free-GST-Billing'], { cwd: OUT_DIR, stdio: 'inherit' });
+    execFileSync('zip', ['-qr', zipName, 'QuickGST-Billing'], { cwd: OUT_DIR, stdio: 'inherit' });
   }
 } catch (e) {
   console.error('  ❌ Zip step failed:', e.message);
@@ -461,8 +454,8 @@ function assertPortableZip(file) {
     console.error('\n    Linux, macOS and NAS unzip tools cannot unpack that into folders.\n');
     process.exit(1);
   }
-  if (!names.includes('Free-GST-Billing/_system/server.js')) {
-    console.error('\n  x Free-GST-Billing/_system/server.js is not in the ZIP - the layout is wrong.\n');
+  if (!names.includes('QuickGST-Billing/_system/server.js')) {
+    console.error('\n  x QuickGST-Billing/_system/server.js is not in the ZIP - the layout is wrong.\n');
     process.exit(1);
   }
   console.log(`  → Verified ${names.length} ZIP entries use portable "/" paths`);
