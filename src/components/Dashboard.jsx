@@ -14,8 +14,6 @@ import ActionsMenu from './ActionsMenu';
 import BulkCsvImport from './BulkCsvImport';
 import PrintPreviewModal from './PrintPreviewModal';
 import InvoiceTrash from './InvoiceTrash';
-import SupportNudge from './SupportNudge';
-import WelcomeCard from './WelcomeCard';
 import { toast } from './Toast';
 import { confirmAction } from './ConfirmModal';
 import { useCostCentres } from './useCostCentres';
@@ -1465,14 +1463,6 @@ export default function Dashboard({ onNew, onEdit, onPrint, onDuplicate, onConve
         <button className="btn btn-primary" onClick={onNew}><Plus size={18} /> New Invoice</button>
       </PageHeader>
 
-      {/* v1.10.69 - a new user used to land here on "No invoices yet." and
-          nothing else. The welcome wizard does end with a list of what to do,
-          but it is shown once and then gone forever, which is no help on day
-          two. This stays until the work is actually done, ticks itself off
-          from real data rather than from "have you seen this screen", and
-          removes itself for good once everything is set up. */}
-      {onOpenSupport && <WelcomeCard invoiceCount={bills.length} onOpenSupport={onOpenSupport} />}
-
       {startedSteps && (
         <div className="glass-panel p-6 mb-6">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.9rem' }}>
@@ -1512,8 +1502,6 @@ export default function Dashboard({ onNew, onEdit, onPrint, onDuplicate, onConve
           </div>
         </div>
       )}
-
-      {!startedSteps && onOpenSupport && <SupportNudge invoiceCount={bills.length} onOpen={onOpenSupport} />}
 
       {overdueBills.length > 0 && (
         <div className="overdue-banner" onClick={() => { setStatusFilter('overdue'); }}

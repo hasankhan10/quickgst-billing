@@ -12,8 +12,8 @@
 // release ZIP ships it (build-release-zip.mjs).
 import crypto from 'crypto';
 
-export const SETUP_NAME = 'Free-GST-Billing-Windows-Setup.exe';
-const REPO_DOWNLOADS = 'https://github.com/IamRamgarhia/Free-GST-Billing-Software/releases/download/';
+export const SETUP_NAME = 'QuickGST-Windows-Setup.exe';
+const REPO_DOWNLOADS = 'https://github.com/hasankhan10/quickgst-billing/releases/download/';
 export const DOWNLOAD_HOSTS = ['github.com', 'objects.githubusercontent.com', 'release-assets.githubusercontent.com'];
 
 export function allowedDownloadUrl(url) {

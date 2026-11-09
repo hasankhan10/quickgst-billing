@@ -1448,14 +1448,67 @@ app.get('/api/changelog', (req, res) => {
   });
 });
 
-app.get('/api/check-update', (req, res) => {
-  res.json({
-    current: pkg.version,
-    latest: pkg.version,
-    updateAvailable: false,
-    releaseNotes: null,
-    releaseUrl: null,
-  });
+let updateCache = null;
+let updateCacheTime = 0;
+
+app.get('/api/check-update', async (req, res) => {
+  const force = req.query.now === '1';
+  const now = Date.now();
+
+  if (!force && updateCache && (now - updateCacheTime < 300000)) {
+    return res.json(updateCache);
+  }
+
+  try {
+    const response = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
+      headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      if (updateCache) return res.json(updateCache);
+      return res.status(502).json({ error: 'Could not fetch updates from GitHub' });
+    }
+
+    const rel = await response.json();
+    const tag = (rel.tag_name || '').replace(/^v/, '').trim();
+    const current = (pkg.version || '1.0.0').replace(/^v/, '').trim();
+
+    const compareVersions = (v1, v2) => {
+      const p1 = v1.split('.').map(n => parseInt(n, 10) || 0);
+      const p2 = v2.split('.').map(n => parseInt(n, 10) || 0);
+      for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+        const num1 = p1[i] || 0;
+        const num2 = p2[i] || 0;
+        if (num1 > num2) return 1;
+        if (num1 < num2) return -1;
+      }
+      return 0;
+    };
+
+    const updateAvailable = compareVersions(tag, current) > 0;
+    const zipAsset = rel.assets?.find(a => a.name.endsWith('.zip'));
+
+    updateCache = {
+      current,
+      latest: tag,
+      updateAvailable,
+      releaseNotes: rel.body || '',
+      releaseUrl: rel.html_url || `https://github.com/hasankhan10/quickgst-billing/releases/tag/${rel.tag_name}`,
+      zipUrl: zipAsset?.browser_download_url || null,
+    };
+    updateCacheTime = now;
+
+    res.json(updateCache);
+  } catch (err) {
+    if (updateCache) return res.json(updateCache);
+    res.json({
+      current: pkg.version,
+      latest: null,
+      updateAvailable: false,
+      error: err.message,
+    });
+  }
 });
 
 // ============================================================
@@ -1465,7 +1518,7 @@ app.get('/api/check-update', (req, res) => {
 // `_system/` in a release install, or `release-templates/_system-scripts/`
 // when running from the source repo.
 // ============================================================
-import { spawn } from 'child_process';
+import { spawn, execFileSync } from 'child_process';
 import os from 'os';
 
 const isWindows = process.platform === 'win32';
@@ -1630,7 +1683,7 @@ async function fetchFromGitHub(url, timeoutMs) {
   const signal = AbortSignal.timeout(timeoutMs);
   for (let hop = 0; hop < 6; hop += 1) {
     if (!allowedDownloadUrl(url)) throw new Error('The download was sent to a site that is not GitHub. Nothing was run.');
-    const res = await fetch(url, { redirect: 'manual', signal, headers: { 'User-Agent': 'FreeGSTBill-updater' } });
+    const res = await fetch(url, { redirect: 'manual', signal, headers: { 'User-Agent': 'QuickGST-Updater' } });
     if (res.status < 300 || res.status >= 400) return res;
     url = new URL(res.headers.get('location') || '', url).href;
   }
@@ -1652,7 +1705,7 @@ async function updateWithSetup() {
   } else {
     let asset;
     try {
-      const rel = await fetch('https://api.github.com/repos/IamRamgarhia/Free-GST-Billing-Software/releases/latest', {
+      const rel = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
         signal: AbortSignal.timeout(20000), headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'FreeGSTBill-updater' },
       });
       asset = rel.ok ? setupAssetFrom(await rel.json()) : null;
@@ -1680,6 +1733,103 @@ async function updateWithSetup() {
   return { log, checked };
 }
 
+
+async function performAutoUpdate() {
+  const relRes = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
+    headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!relRes.ok) throw new Error('Could not reach GitHub to fetch update details.');
+  const rel = await relRes.json();
+  const zipAsset = (rel.assets || []).find(a => a.name && a.name.endsWith('.zip'));
+  if (!zipAsset) throw new Error('Release ZIP package not found on GitHub.');
+
+  const zipUrl = zipAsset.browser_download_url;
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qgst-update-'));
+  const zipFile = path.join(tempDir, 'update.zip');
+
+  const dlRes = await fetch(zipUrl, {
+    headers: { 'User-Agent': 'QuickGST-Updater' },
+    signal: AbortSignal.timeout(600000),
+  });
+  if (!dlRes.ok) throw new Error(`Download failed with status ${dlRes.status}`);
+  const arrayBuf = await dlRes.arrayBuffer();
+  fs.writeFileSync(zipFile, Buffer.from(arrayBuf));
+
+  const extractDir = path.join(tempDir, 'extracted');
+  fs.mkdirSync(extractDir, { recursive: true });
+  execFileSync('tar.exe', ['-xf', zipFile, '-C', extractDir]);
+
+  const entries = fs.readdirSync(extractDir);
+  const rootName = entries.find(e => fs.statSync(path.join(extractDir, e)).isDirectory()) || '';
+  const newRoot = rootName ? path.join(extractDir, rootName) : extractDir;
+  const newSystem = fs.existsSync(path.join(newRoot, '_system')) ? path.join(newRoot, '_system') : newRoot;
+
+  const appRoot = path.basename(__dirname) === '_system' ? path.dirname(__dirname) : __dirname;
+  const currentSystem = __dirname;
+
+  const dataDir = path.join(currentSystem, 'data');
+  if (fs.existsSync(dataDir)) {
+    const backupDir = path.join(os.homedir(), 'Documents', 'QuickGST Backups');
+    fs.mkdirSync(backupDir, { recursive: true });
+    const backupZip = path.join(backupDir, `pre-update-${Date.now()}.zip`);
+    try {
+      execFileSync('tar.exe', ['-cf', backupZip, '-C', currentSystem, 'data']);
+    } catch {}
+  }
+
+  if (isWindows) {
+    const batPath = path.join(tempDir, 'apply-update.bat');
+    const exeSource = path.join(newRoot, 'QuickGST.exe');
+    const exeDest = path.join(appRoot, 'QuickGST.exe');
+
+    const batScript = [
+      '@echo off',
+      'timeout /t 2 /nobreak >nul',
+      `taskkill /f /pid ${process.pid} >nul 2>&1`,
+      'timeout /t 1 /nobreak >nul',
+      `xcopy /s /e /y /q "${newSystem}\\*" "${currentSystem}\\"`,
+      fs.existsSync(exeSource) ? `copy /y "${exeSource}" "${exeDest}" >nul 2>&1` : '',
+      `cd /d "${appRoot}"`,
+      fs.existsSync(exeDest) ? `start "" "${exeDest}"` : `"${process.execPath}" "${path.join(currentSystem, 'server.js')}"`,
+      'exit',
+    ].filter(Boolean).join('\r\n');
+
+    fs.writeFileSync(batPath, batScript, 'utf8');
+
+    spawn('cmd.exe', ['/c', batPath], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    }).unref();
+  } else {
+    const shPath = path.join(tempDir, 'apply-update.sh');
+    const shScript = [
+      '#!/bin/sh',
+      'sleep 2',
+      `kill -9 ${process.pid} 2>/dev/null || true`,
+      'sleep 1',
+      `cp -Rf "${newSystem}/." "${currentSystem}/"`,
+      `cd "${currentSystem}"`,
+      `nohup "${process.execPath}" "${path.join(currentSystem, 'server.js')}" >/dev/null 2>&1 &`,
+      'exit 0',
+    ].join('\n');
+
+    fs.writeFileSync(shPath, shScript, { mode: 0o755 });
+    spawn('/bin/sh', [shPath], {
+      detached: true,
+      stdio: 'ignore',
+    }).unref();
+  }
+
+  return {
+    ok: true,
+    installer: true,
+    version: pkg.version,
+    stdout: 'The update is installing. QuickGST will restart automatically.',
+  };
+}
+
 app.post('/api/control-panel/launch-script', async (req, res) => {
   // Whitelisted script actions the Control Panel exposes.
   const allowed = new Set(['update', 'restore', 'move', 'stop']);
@@ -1691,16 +1841,14 @@ app.post('/api/control-panel/launch-script', async (req, res) => {
     setTimeout(() => process.exit(0), 400);
     return;
   }
-  if (action === 'update' && INSTALLED) {
+  if (action === 'update') {
     try {
-      const { log, checked } = await updateWithSetup();
-      res.json({ ok: true, installer: true, version: pkg.version, log, checked, stdout: 'The new version is installing. The app restarts by itself in about a minute.' });
+      const updateResult = await performAutoUpdate();
+      return res.json(updateResult);
     } catch (e) {
-      res.json({ ok: false, error: e.message });
+      return res.json({ ok: false, error: e.message });
     }
-    return;
   }
-  if (action === 'update' && updateHint()) { res.json({ ok: false, error: updateHint() }); return; }
   const script = pickScript(action);
   const result = await runControlScript(script);
   res.json(result);

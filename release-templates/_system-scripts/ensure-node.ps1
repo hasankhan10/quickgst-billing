@@ -104,7 +104,7 @@ function Test-AppFolderWritable {
       "Folder: $(Split-Path -Parent $PSScriptRoot)",
       'This happens inside C:\Program Files, on a read-only drive, or when',
       'antivirus "controlled folder access" blocks it.',
-      'Move the Free-GST-Billing folder to Documents or D:\ and open it from there.')
+      'Move the QuickGST-Billing folder to Documents or D:\ and open it from there.')
     return $false
   }
 }
@@ -232,7 +232,7 @@ function Show-InstallHelp {
     'The internet, the disk and the folder all look fine, so the usual cause is',
     'antivirus blocking files as they are written. Add the Free-GST-Billing folder',
     'to its exclusions and try again. If it keeps failing, open an issue at',
-    'https://github.com/IamRamgarhia/Free-GST-Billing-Software/issues with a',
+    'https://github.com/hasankhan10/quickgst-billing/issues with a',
     'photo of this window.')
 }
 
