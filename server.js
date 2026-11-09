@@ -18,6 +18,7 @@ import { validateCashEntry, cleanCashEntry } from './src/utils/cashBook.js';
 import { validatePurchasePayments } from './src/utils/purchasePayments.js';
 import { templateTotals, clientYearToDate, nextCounterValue, startFor, numberSeriesFor, counterKeyFor, formatDocNumber, businessKeyOf, getFinancialYearLabel, INVOICE_TYPES } from './src/utils.js';
 import { resolveAppHome } from './src/utils/appHome.js';
+import { getLicenseStatus, activateLicense } from './src/utils/license.js';
 import { makeDir, makeDirAsync } from './src/utils/makeDir.js';
 import { LOCK_NAME, acquireLock, writeLock, releaseLock, portIdentity } from './src/utils/serverLock.js';
 import { SETUP_NAME, allowedDownloadUrl, checkSetupBytes, setupAssetFrom } from './src/utils/setupDownload.js';
@@ -1356,6 +1357,29 @@ const updateHint = (latest) => ({
 // books, not an old copy's on the same port).
 app.get('/api/version', (req, res) => {
   res.json({ current: pkg.version, pid: process.pid, lockId: LOCK_ID, books: APP_HOME });
+});
+
+// ========================
+// License & Machine Activation (Stova Media)
+// ========================
+app.get('/api/license/status', (req, res) => {
+  try {
+    const status = getLicenseStatus(DATA_DIR);
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve license status' });
+  }
+});
+
+app.post('/api/license/activate', (req, res) => {
+  try {
+    const { key } = req.body || {};
+    if (!key) return res.status(400).json({ success: false, error: 'License key is required' });
+    const result = activateLicense(DATA_DIR, key);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Activation failed' });
+  }
 });
 
 // v1.10.83 - the browser's Problem log copies each entry here, so errors.log

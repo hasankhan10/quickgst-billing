@@ -1,7 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#1e40af"/>
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="#2563eb"/>
-  <path d="M18 16h28a2 2 0 012 2v28a2 2 0 01-2 2H18a2 2 0 01-2-2V18a2 2 0 012-2z" fill="#fff" opacity="0.15"/>
-  <text x="32" y="44" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="26" fill="#fff">B</text>
-  <rect x="14" y="50" width="36" height="3" rx="1.5" fill="#60a5fa"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="qgst-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Emerald Rupee Gradient -->
+    <linearGradient id="qgst-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Electric Amber Spark Gradient -->
+    <linearGradient id="qgst-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+
+    <!-- Outer Glow -->
+    <filter id="qgst-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#059669" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Container Squircle -->
+  <rect width="128" height="128" rx="28" fill="url(#qgst-bg)"/>
+  <rect x="2" y="2" width="124" height="124" rx="26" stroke="#334155" stroke-width="1.5" stroke-opacity="0.6"/>
+
+  <!-- The Geometric "Q" Body -->
+  <circle cx="60" cy="58" r="36" stroke="url(#qgst-emerald)" stroke-width="10" stroke-linecap="round" filter="url(#qgst-glow)"/>
+
+  <!-- Q Kick Tail / Spark -->
+  <path d="M78 76 L100 98" stroke="url(#qgst-amber)" stroke-width="11" stroke-linecap="round"/>
+  <path d="M70 82 L90 102" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Indian Rupee (₹) Symbol in Center -->
+  <!-- Upper Horizontal Bar -->
+  <path d="M47 43 H73" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <!-- Lower Horizontal Bar -->
+  <path d="M47 53 H69" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <!-- Central Stem & Arc -->
+  <path d="M57 43 V75 M57 43 C67 43 72 49 72 55 C72 62 66 65 57 65 L72 77" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Subtle Speed Accent Dots -->
+  <circle cx="26" cy="30" r="3" fill="#34D399" opacity="0.6"/>
+  <circle cx="102" cy="36" r="2" fill="#FDE047" opacity="0.7"/>
 </svg>

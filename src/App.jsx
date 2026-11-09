@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
-import { Home, FileText, Settings, Plus, Users, Package, BarChart3, Wallet, RefreshCw, Receipt, BookOpen, Moon, Sun, Download, X, ShoppingCart, ChevronDown, Building2, Pencil, HelpCircle, Search, Command, Bell, Calculator, HardDrive, Menu, Heart, Banknote } from 'lucide-react';
+import { Home, FileText, Settings, Plus, Users, Package, BarChart3, Wallet, RefreshCw, Receipt, BookOpen, Moon, Sun, Download, X, ShoppingCart, ChevronDown, Building2, Pencil, HelpCircle, Search, Command, Bell, Calculator, HardDrive, Menu, Heart, Banknote, KeyRound } from 'lucide-react';
 import { getAllProfiles, saveProfile, getEnabledModules, getMenuOrder, onMenuChanged, getAllBills, getAllProducts, getStockAlertSettings, getAllClients, runUpdateNow, getLockStatus } from './store';
 import { isModuleEnabled, getUpcomingFilings, countsAsSales, localToday, toLocalIsoDate, DOCS_URL, findLowStock, trackedStock } from './utils';
 import { orderedMenu } from './utils/businessTypes';
@@ -25,6 +25,7 @@ import ToastContainer, { toast } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import ConfirmModalContainer from './components/ConfirmModal';
 import WelcomeGuide from './components/WelcomeGuide';
+import LicenseModal from './components/LicenseModal';
 const SettingsView = lazy(() => import('./components/SettingsView'));
 const ClientsView = lazy(() => import('./components/ClientsView'));
 const InventoryView = lazy(() => import('./components/InventoryView'));
@@ -136,6 +137,24 @@ function App() {
   const [notifyAsked, setNotifyAsked] = useState(false);
   const updateBannerVisible = updateInfo?.updateAvailable
     && localStorage.getItem('freegstbill_dismissedUpdate') !== updateInfo.latest;
+
+  const [licenseStatus, setLicenseStatus] = useState(null);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+
+  const fetchLicense = async () => {
+    try {
+      const res = await fetch('/api/license/status');
+      const data = await res.json();
+      setLicenseStatus(data);
+      if (!data.licensed && !data.isTrial) {
+        setShowLicenseModal(true);
+      }
+    } catch { /* offline / local error */ }
+  };
+
+  useEffect(() => {
+    fetchLicense();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -904,7 +923,7 @@ function App() {
           <div className={`sidebar-logo${ownBrand && brand.logo ? ' sidebar-logo-own' : ''}`}>
             {ownBrand && brand.logo ? <img src={brand.logo} alt="" />
               : ownBrand ? <span className="sidebar-logo-letter">{brand.businessName.trim().charAt(0).toUpperCase()}</span>
-                : <FileText size={22} />}
+                : <img src="/favicon.svg" alt="QuickGST" width={28} height={28} style={{ borderRadius: 6 }} />}
           </div>
           {/* "by DiceCodes" always stays, under their name too. "Free forever" is
               in the top bar; on a phone (no top bar) it stays here. */}
@@ -1047,8 +1066,25 @@ function App() {
 
       <div className="main-content">
         <div className="app-topbar">
-          {/* v1.10.83 - the promise, on every screen (it was under the app name in the menu). */}
           <span className="topbar-free" title="QuickGST Pro · Built by Stova Media">Built by Stova Media</span>
+          {licenseStatus && (
+            <button
+              type="button"
+              onClick={() => setShowLicenseModal(true)}
+              style={{
+                marginLeft: '0.75rem',
+                background: licenseStatus.licensed ? 'rgba(22, 163, 74, 0.12)' : licenseStatus.isTrial ? 'rgba(217, 119, 6, 0.12)' : 'rgba(220, 38, 38, 0.12)',
+                color: licenseStatus.licensed ? '#16a34a' : licenseStatus.isTrial ? '#d97706' : '#dc2626',
+                border: `1px solid ${licenseStatus.licensed ? '#86efac' : licenseStatus.isTrial ? '#fde68a' : '#fecaca'}`,
+                borderRadius: '20px', padding: '0.2rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              }}
+              title="Click to view license status"
+            >
+              <KeyRound size={12} />
+              {licenseStatus.licensed ? 'PRO LIFETIME' : licenseStatus.isTrial ? `TRIAL (${licenseStatus.daysLeft}d)` : 'LOCKED'}
+            </button>
+          )}
           {topActions}
         </div>
         {/* v1.10.83 - a screen that throws shows "ran into a problem" here
@@ -1362,6 +1398,14 @@ function App() {
 
       <ToastContainer />
       <ConfirmModalContainer />
+      {showLicenseModal && (
+        <LicenseModal
+          licenseStatus={licenseStatus}
+          onRefresh={fetchLicense}
+          onClose={() => setShowLicenseModal(false)}
+          forceOpen={licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial}
+        />
+      )}
     </div>
   );
 }
