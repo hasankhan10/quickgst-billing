@@ -137,7 +137,7 @@ We offer professional business services for enterprises, retail chains, and dist
 * **Annual Maintenance Contracts (AMC)**: Dedicated technical support for retail counters.
 
 * **Email**: stovamedia@gmail.com 
-* **Website**: [stovamedia.com](https://stovamedia.in)
+* **Website**: [stovamedia.in](https://stovamedia.in)
 
 ---
 
