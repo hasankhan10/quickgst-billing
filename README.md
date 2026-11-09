@@ -136,8 +136,8 @@ We offer professional business services for enterprises, retail chains, and dist
 * **Data Migration**: Effortless migration from legacy Tally, Busy, or Excel sheets.
 * **Annual Maintenance Contracts (AMC)**: Dedicated technical support for retail counters.
 
-* **Email**: support@stovamedia.com  
-* **Website**: [stovamedia.com](https://stovamedia.com)
+* **Email**: stovamedia@gmail.com 
+* **Website**: [stovamedia.com](https://stovamedia.in)
 
 ---
 
