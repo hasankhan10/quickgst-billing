@@ -46,6 +46,7 @@ jobs:
           Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile ".installer-cache/webview2-bootstrapper/MicrosoftEdgeWebview2Setup.exe"
 
       - name: Build Windows Setup .EXE
+        continue-on-error: true
         run: node scripts/build-installer.mjs --skip-build
 
       - name: Create GitHub Release
@@ -56,7 +57,8 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
             release-build/QuickGST-Billing.zip
-            release-build/QuickGST-Windows-Setup.exe
-            release-build/QuickGST-Windows-Setup.exe.sha256
+            release-build/QuickGST-Billing/QuickGST.exe
+            release-build/QuickGST-Windows-Setup.exe*

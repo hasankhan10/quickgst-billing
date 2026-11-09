@@ -61,6 +61,21 @@ const version = pkgJson.version;
 if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
 mkdirSync(SYSTEM, { recursive: true });
 
+// --- Compile native Windows Launcher (QuickGST.exe) if on Windows with csc ---
+const cscPath = join(process.env.SystemRoot || 'C:\\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe');
+const launcherCs = join(REPO_ROOT, 'scripts', 'QuickGSTLauncher.cs');
+const targetExe = join(templates, 'QuickGST.exe');
+if (existsSync(cscPath) && existsSync(launcherCs)) {
+  try {
+    const icon = join(templates, '_system-scripts', 'app-icon.ico');
+    const iconArg = existsSync(icon) ? [`/win32icon:${icon}`] : [];
+    execFileSync(cscPath, ['/nologo', '/target:winexe', '/optimize+', ...iconArg, `/out:${targetExe}`, launcherCs], { stdio: 'inherit' });
+    console.log('  → Compiled QuickGST.exe successfully.');
+  } catch (err) {
+    console.warn('  ⚠️ Note: Using existing QuickGST.exe if present.');
+  }
+}
+
 // --- Copy launcher files to root of staging ---
 console.log('  → Copying launcher files…');
 for (const f of readdirSync(templates)) {

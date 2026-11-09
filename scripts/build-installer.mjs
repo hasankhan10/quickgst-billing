@@ -40,11 +40,20 @@ const version = arg('version') || JSON.parse(readFileSync(join(ROOT, 'package.js
 if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`Version "${version}" is not like 1.10.84.`);
 
 function findIscc() {
-  const places = [process.env.ISCC,
+  const places = [
+    process.env.ISCC,
     join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 6', 'ISCC.exe'),
     join(process.env['ProgramFiles(x86)'] || '', 'Inno Setup 6', 'ISCC.exe'),
-    join(process.env.ProgramFiles || '', 'Inno Setup 6', 'ISCC.exe')];
-  return places.find((p) => p && existsSync(p)) || null;
+    join(process.env.ProgramFiles || '', 'Inno Setup 6', 'ISCC.exe'),
+    'C:\\ProgramData\\chocolatey\\bin\\iscc.exe'
+  ];
+  const direct = places.find((p) => p && existsSync(p));
+  if (direct) return direct;
+  try {
+    const fromPath = execSync('where iscc.exe', { encoding: 'utf8' }).trim().split('\n')[0].trim();
+    if (fromPath && existsSync(fromPath)) return fromPath;
+  } catch {}
+  return null;
 }
 
 async function download(url) {
