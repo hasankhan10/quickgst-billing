@@ -5,8 +5,8 @@ import WhatsNew from './WhatsNew';
 import ProblemLog from './ProblemLog';
 import { SafePrivateSection } from './SafePrivateNote';
 
-const EMAIL = 'support@stovamedia.com';
-const SITE = 'https://stovamedia.com';
+const EMAIL = 'support@stovamedia.in';
+const SITE = 'https://stovamedia.in/contact';
 
 const SERVICES = [
   { icon: Printer, title: 'POS & Thermal Setup', text: '58mm/80mm thermal receipt printer and barcode scanner configuration.' },

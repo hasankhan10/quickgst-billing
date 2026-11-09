@@ -1,4 +1,7 @@
 import express from 'express';
+// Prevent broken pipe / bad file descriptor crashes when running detached/silent on Windows
+if (process.stdout?.on) process.stdout.on('error', () => {});
+if (process.stderr?.on) process.stderr.on('error', () => {});
 // v1.10.0 — `cors` package no longer imported. The CORS-lockdown
 // middleware below is intentionally custom + strict (localhost only)
 // where `cors()` echoed `*` for every origin.
@@ -444,6 +447,10 @@ const DEFAULT_PROFILE = {
   email: '', phone: '', bankName: '', accountNumber: '', ifsc: '',
   logo: '', signature: '', upiId: '', googleClientId: '', googleDriveFolder: 'GST Billing Invoices',
 };
+
+app.head('/api/profile', (req, res) => {
+  res.status(200).end();
+});
 
 app.get('/api/profile', (req, res) => {
   res.json(readJSON(PROFILE_PATH, DEFAULT_PROFILE));

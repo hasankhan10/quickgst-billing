@@ -42,18 +42,16 @@ class QuickGSTLauncher
 
                 string serverScript = Path.Combine(systemDir, "server.js");
 
-                // Start node server silently
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = nodeExe;
-                psi.Arguments = "\"" + serverScript + "\"";
-                psi.WorkingDirectory = systemDir;
-                psi.CreateNoWindow = true;
-                psi.UseShellExecute = false;
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
+                // Start node server silently and detached
                 bool started = false;
                 try
                 {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = nodeExe;
+                    psi.Arguments = "\"" + serverScript + "\"";
+                    psi.WorkingDirectory = systemDir;
+                    psi.WindowStyle = ProcessWindowStyle.Hidden;
+                    psi.UseShellExecute = true;
                     Process.Start(psi);
                     started = true;
                 }
@@ -72,8 +70,8 @@ class QuickGSTLauncher
                         psPsi.FileName = "powershell.exe";
                         psPsi.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + psScript + "\" -NoWindow -Hidden";
                         psPsi.WorkingDirectory = systemDir;
-                        psPsi.CreateNoWindow = true;
-                        psPsi.UseShellExecute = false;
+                        psPsi.WindowStyle = ProcessWindowStyle.Hidden;
+                        psPsi.UseShellExecute = true;
                         Process.Start(psPsi);
                     }
                 }

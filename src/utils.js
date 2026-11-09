@@ -839,7 +839,7 @@ export const markUnpaidPatch = (bill) => {
 // The online documentation. Help buttons link straight to the section for
 // their screen, and the sidebar User Guide opens the start (v1.10.75). The
 // build of docs-site checks that every doc="page#section" used in src exists.
-export const DOCS_URL = 'https://stovamedia.com';
+export const DOCS_URL = 'https://stovamedia.in/contact';
 export const docsLink = () => DOCS_URL;
 
 // GSTR-1 B2C Large: an inter-state sale to an unregistered buyer above this

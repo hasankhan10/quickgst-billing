@@ -363,14 +363,14 @@ function App() {
         // by the offline copy (the api-cache), so with the server stopped the
         // app showed old data with a green "running" dot. HEAD reaches the
         // server or fails.
-        const live = await fetch('/api/profile', { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+        const live = await fetch('/api/profile', { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(12000) });
         if (live.ok) {
           if (cancelled) return;
           misses = 0;
           setServerDown(false);
           setServerStatus('online');
           if (!profileLoaded.current) {
-            const res = await fetch('/api/profile', { signal: AbortSignal.timeout(8000) });
+            const res = await fetch('/api/profile', { signal: AbortSignal.timeout(12000) });
             if (!res.ok) throw new Error('not ok');
             profileLoaded.current = true;
             const p = await res.json();
@@ -385,7 +385,7 @@ function App() {
       } catch {
         if (cancelled) return;
         misses += 1;
-        if (!profileLoaded.current || misses >= 3) {
+        if (!profileLoaded.current || misses >= 6) {
           setServerDown(true);
           setServerStatus('offline');
         }
@@ -826,36 +826,54 @@ function App() {
   if (serverDown) {
     return (
       <div className="server-down-overlay">
-        <div className="server-down-modal">
-          <FileText size={48} color="#3b82f6" />
-          <h2>Free GST Billing Software Needs a Quick Start <HelpButton title="Needs a Quick Start" doc="shortcuts#app-not-running" size={16} /></h2>
-          <p>
-            Your data is <strong>100% safe</strong> on your computer — nothing is lost.
-            The app just needs to be started once.
+        <div className="server-down-modal" style={{ textAlign: 'center', padding: '2.5rem', maxWidth: '480px', borderRadius: '1rem', background: darkMode ? '#1e293b' : '#ffffff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+          <img src="/icons/icon-192.png" alt="QuickGST" width={64} height={64} style={{ margin: '0 auto 1rem', display: 'block' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.5rem', color: darkMode ? '#f8fafc' : '#0f172a' }}>
+            QuickGST Billing Needs a Quick Start
+          </h2>
+          <p style={{ fontSize: '0.92rem', color: darkMode ? '#94a3b8' : '#64748b', margin: '0 0 1.25rem' }}>
+            Your invoices and data are <strong>100% safe</strong> on your computer. The engine just needs to be started.
           </p>
-          {/* v1.10.69 - there was an "Open GST Billing" button here, linking to
-              freegstbill://start. Only the old Install FreeGSTBill.bat ever
-              registered that protocol, and it stopped shipping in v1.10.44, so
-              on every current install the button did nothing at all. There is
-              also nothing it could do: a web page cannot start a program, and
-              this screen is being served from the offline cache precisely
-              because the server is not running. The steps below are the only
-              real answer, so they are no longer the fallback. See ERR-019. */}
-          <div className="server-down-steps">
-            <p className="server-down-hint">How to start it:</p>
-            <ol>
-              <li>Double-click the <strong>Free GST Billing</strong> icon on your Desktop (the blue <strong>B</strong>)</li>
-              <li>Or search <strong>"Free GST Billing"</strong> in the Start Menu</li>
+          <div className="server-down-steps" style={{ textAlign: 'left', background: darkMode ? '#0f172a' : '#f8fafc', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0', margin: '0 0 1.25rem' }}>
+            <p className="server-down-hint" style={{ fontWeight: 600, margin: '0 0 0.5rem', color: darkMode ? '#cbd5e1' : '#334155' }}>To start or reconnect:</p>
+            <ol style={{ margin: 0, paddingLeft: '1.25rem', color: darkMode ? '#94a3b8' : '#475569', fontSize: '0.88rem', lineHeight: '1.5' }}>
+              <li>Double-click the <strong>QuickGST Billing</strong> shortcut on your Desktop</li>
+              <li>Or run <strong>QuickGST.exe</strong> inside your installation folder</li>
             </ol>
-            {/* v1.10.83 - an icon made by the browser ("Install as Desktop App",
-                removed in this version) opens this window but cannot start the
-                app. Say so, or people keep clicking it. */}
-            <p className="server-down-hint">Opened this from a Chrome or Edge app icon? That icon cannot start the app. Use the Free GST Billing icon instead; you can remove the other one (right-click it, then Uninstall).</p>
           </div>
-          <p className="server-down-safe">All your invoices, clients, and data are safely stored on your computer. They are never deleted or shared.</p>
-          <div className="server-down-waiting">
-            <div className="server-down-spinner" />
-            <span>Starting... this page will open automatically.</span>
+          <p className="server-down-safe" style={{ fontSize: '0.82rem', color: '#10b981', margin: '0 0 1.25rem', fontWeight: 500 }}>
+            ✓ All your financial records are permanently preserved locally.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.75rem 1.5rem',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                borderRadius: '0.5rem',
+                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}
+              onClick={() => {
+                checkServer();
+                setTimeout(() => window.location.reload(), 600);
+              }}
+            >
+              <RefreshCw size={18} /> Reconnect Now
+            </button>
+            <div className="server-down-waiting" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: darkMode ? '#94a3b8' : '#64748b' }}>
+              <div className="server-down-spinner" />
+              <span>Checking background connection automatically…</span>
+            </div>
           </div>
         </div>
       </div>
