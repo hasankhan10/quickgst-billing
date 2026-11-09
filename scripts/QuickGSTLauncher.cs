@@ -142,23 +142,21 @@ class QuickGSTLauncher
         {
             string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             string shortcutPath = Path.Combine(desktop, "QuickGST Billing.lnk");
-            if (!File.Exists(shortcutPath))
-            {
-                string targetExe = Path.Combine(exeDir, "QuickGST.exe");
-                string iconPath = Path.Combine(exeDir, "_system", "app-icon.ico");
-                if (!File.Exists(iconPath)) iconPath = targetExe;
+            string targetExe = Path.Combine(exeDir, "QuickGST.exe");
+            string iconPath = Path.Combine(exeDir, "_system", "app-icon.ico");
+            if (!File.Exists(iconPath)) iconPath = Path.Combine(exeDir, "app-icon.ico");
+            if (!File.Exists(iconPath)) iconPath = targetExe;
 
-                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
-                if (shellType != null)
-                {
-                    dynamic shell = Activator.CreateInstance(shellType);
-                    dynamic shortcut = shell.CreateShortcut(shortcutPath);
-                    shortcut.TargetPath = targetExe;
-                    shortcut.WorkingDirectory = exeDir;
-                    shortcut.Description = "QuickGST Billing - Built by Stova Media";
-                    shortcut.IconLocation = iconPath + ",0";
-                    shortcut.Save();
-                }
+            Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType != null)
+            {
+                dynamic shell = Activator.CreateInstance(shellType);
+                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                shortcut.TargetPath = targetExe;
+                shortcut.WorkingDirectory = exeDir;
+                shortcut.Description = "QuickGST Billing - Built by Stova Media";
+                shortcut.IconLocation = iconPath + ",0";
+                shortcut.Save();
             }
         }
         catch { /* best effort */ }

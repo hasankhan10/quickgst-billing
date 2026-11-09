@@ -144,28 +144,12 @@ export default function WelcomeGuide({ onComplete }) {
                 Let's set up your business profile so your invoices look professional. Takes about 2 minutes.
               </p>
 
-              <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', textAlign: 'left' }}>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.6rem', color: 'var(--text-primary)' }}>Where will you be invoicing from?</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                  {[
-                    { id: 'india', label: '🇮🇳 India', desc: 'GST, GSTR-1/3B, UPI' },
-                    { id: 'international', label: '🌍 Outside India', desc: 'VAT/SST/MwSt' },
-                    { id: 'both', label: '🌐 Both', desc: 'India + foreign clients' },
-                  ].map(opt => (
-                    <button key={opt.id} type="button"
-                      onClick={() => {
-                        setRegion(opt.id);
-                        if (opt.id === 'india') setProfile(p => ({ ...p, country: 'India' }));
-                        else if (opt.id === 'international' && profile.country === 'India') setProfile(p => ({ ...p, country: detectCountryFromBrowser() === 'India' ? 'United States' : detectCountryFromBrowser() }));
-                      }}
-                      className={`type-chip ${region === opt.id ? 'type-chip-active' : ''}`}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.55rem 0.7rem', gap: '0.15rem' }}>
-                      <span style={{ fontWeight: 600 }}>{opt.label}</span>
-                      <span style={{ fontSize: '0.68rem', color: region === opt.id ? 'inherit' : 'var(--text-muted)', fontWeight: 400 }}>{opt.desc}</span>
-                    </button>
-                  ))}
+              <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem', textAlign: 'left' }}>
+                <span style={{ fontSize: '1.6rem' }}>🇮🇳</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)' }}>Indian GST Edition</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Configured exclusively for Indian GST compliance: CGST, SGST, IGST, E-Way Bill &amp; UPI QR.</div>
                 </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.6rem 0 0' }}>You can change this any time in Settings → Print &amp; PDF → Region.</p>
               </div>
             </div>
           )}
