@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
-import { Home, FileText, Settings, Plus, Users, Package, BarChart3, Wallet, RefreshCw, Receipt, BookOpen, Moon, Sun, Download, X, ShoppingCart, ChevronDown, Building2, Pencil, HelpCircle, Search, Command, Bell, Calculator, HardDrive, Menu, Heart, Banknote, KeyRound } from 'lucide-react';
+import { Home, FileText, Settings, Plus, Users, Package, BarChart3, Wallet, RefreshCw, Receipt, BookOpen, Moon, Sun, Download, X, ShoppingCart, ChevronDown, Building2, Pencil, HelpCircle, Search, Command, Bell, Calculator, HardDrive, Menu, Banknote, KeyRound } from 'lucide-react';
 import { getAllProfiles, saveProfile, getEnabledModules, getMenuOrder, onMenuChanged, getAllBills, getAllProducts, getStockAlertSettings, getAllClients, runUpdateNow, getLockStatus } from './store';
 import { isModuleEnabled, getUpcomingFilings, countsAsSales, localToday, toLocalIsoDate, DOCS_URL, findLowStock, trackedStock } from './utils';
 import { orderedMenu } from './utils/businessTypes';
@@ -38,7 +38,6 @@ const GSTReturns = lazy(() => import('./components/GSTReturns'));
 const IncomeTax = lazy(() => import('./components/IncomeTax'));
 const PurchaseBills = lazy(() => import('./components/PurchaseBills'));
 const ControlPanel = lazy(() => import('./components/ControlPanel'));
-const SupportView = lazy(() => import('./components/SupportView'));
 import StarBanner from './components/StarBanner';
 import AppFooter from './components/AppFooter';
 import LockButton from './components/LockButton';
@@ -82,7 +81,7 @@ function App() {
       const params = new URLSearchParams(window.location.search);
       const v = params.get('view');
       // v1.10.74 - 'controlpanel' added so ?view=controlpanel deep links work too.
-      const valid = ['dashboard', 'new', 'clients', 'inventory', 'expenses', 'purchases', 'recurring', 'receipts', 'cashbook', 'reports', 'filing', 'incometax', 'settings', 'controlpanel', 'support'];
+      const valid = ['dashboard', 'new', 'clients', 'inventory', 'expenses', 'purchases', 'recurring', 'receipts', 'cashbook', 'reports', 'filing', 'incometax', 'settings', 'controlpanel'];
       if (v && valid.includes(v)) {
         // Strip the query string so a refresh doesn't keep snapping back to
         // the shortcut target — only the *first* navigation honours it.
@@ -634,7 +633,6 @@ function App() {
     // v1.10.74 - Control Panel has its own sidebar button but was missing here.
     // v1.10.83 - and, like every menu item, not when it is switched off.
     if (bottomIds.includes('controlpanel')) acts.push({ label: 'Go to Control Panel', hint: '', category: 'nav', run: () => setCurrentView('controlpanel') });
-    acts.push({ label: 'Go to Support & About', hint: '', category: 'nav', run: () => setCurrentView('support') });
     if (topIds.includes('guide')) acts.push({ label: 'Open the User Guide', hint: '', category: 'help', run: openDocs });
     acts.push({ label: 'Toggle dark mode', hint: '', category: 'action', run: () => setDarkMode(d => !d) });
     acts.push({ label: 'Show keyboard shortcuts', hint: 'Ctrl+/', category: 'help', run: () => setShowShortcutsHelp(true) });
@@ -1041,15 +1039,6 @@ function App() {
             {/* v1.10.83 - in the order chosen in Settings → Features; switched-off
                 ones are already left out of bottomIds. */}
             {bottomIds.map(id => ({
-              support: (
-                <button key={id}
-                  className={`nav-btn nav-btn-support${currentView === 'support' ? ' nav-btn-support-active' : ''}`}
-                  onClick={() => setCurrentView('support')}
-                  title="Who makes this app, and how to help"
-                >
-                  <Heart size={18} /> Support &amp; About
-                </button>
-              ),
               controlpanel: (
                 <button key={id}
                   className={`nav-btn ${currentView === 'controlpanel' ? 'nav-btn-active' : ''}`}
@@ -1165,12 +1154,9 @@ function App() {
         {currentView === 'controlpanel' && (
           <ControlPanel />
         )}
-        {currentView === 'support' && (
-          <SupportView />
-        )}
         </Suspense>
-        {/* Version + DiceCodes line: Dashboard only, so it never takes space on working screens. */}
-        {currentView === 'dashboard' && <AppFooter onOpenSupport={() => setCurrentView('support')} />}
+        {/* Version + branding line: Dashboard only, so it never takes space on working screens. */}
+        {currentView === 'dashboard' && <AppFooter />}
         </ErrorBoundary>
       </div>
 
