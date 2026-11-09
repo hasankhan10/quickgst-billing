@@ -36,15 +36,6 @@ jobs:
       - name: Package Release ZIP
         run: node scripts/build-release-zip.mjs
 
-      - name: Prepare WebView2 SDK & Bootstrapper Cache
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force -Path .installer-cache/webview2-sdk/pkg
-          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.4258.31" -OutFile ".installer-cache/webview2-sdk.zip"
-          tar -xf ".installer-cache/webview2-sdk.zip" -C ".installer-cache/webview2-sdk/pkg"
-          New-Item -ItemType Directory -Force -Path .installer-cache/webview2-bootstrapper
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile ".installer-cache/webview2-bootstrapper/MicrosoftEdgeWebview2Setup.exe"
-
       - name: Build Windows Setup .EXE
         run: node scripts/build-installer.mjs --skip-build
 

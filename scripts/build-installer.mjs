@@ -112,18 +112,29 @@ if (arg('version')) {
   writeFileSync(p, JSON.stringify({ ...JSON.parse(readFileSync(p, 'utf8')), version }, null, 2));
 }
 
-// 3. The app's own window, Free GST Billing.exe (installer/host): compiled with
+// 3. The app's own window, QuickGST Billing.exe (installer/host): compiled with
 // the C# compiler that is part of Windows (.NET Framework 4.x, no SDK), with
 // Microsoft's WebView2 SDK (NuGet Microsoft.Web.WebView2 1.0.4258.31, its
 // files checked against these SHA-256s; a new SDK version: new hashes here).
 // WEBVIEW2_SDK=<the unpacked package> or .installer-cache/webview2-sdk/pkg (not release-build/: release:zip empties it).
+const tar = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+const sdk = resolve(process.env.WEBVIEW2_SDK || join(ROOT, '.installer-cache', 'webview2-sdk', 'pkg'));
+const pinned = {
+  'lib/net462/Microsoft.Web.WebView2.Core.dll': 'd60e6e94245078cb56e44ebd5f360dc04bf18e460136be93bfc4cfca43b98505',
+  'lib/net462/Microsoft.Web.WebView2.WinForms.dll': '6a9e6856f23c463783c3afb0ca5d78f56324c86657162ccb16d5227b3233b32a',
+  'runtimes/win-x64/native/WebView2Loader.dll': '3426dcc55fdfb8b5e7ac623cf33b4ccf283fbf68a0c5a65bddfdb4d749a8abee',
+};
+
+if (Object.keys(pinned).some((rel) => !existsSync(join(sdk, rel)))) {
+  mkdirSync(sdk, { recursive: true });
+  console.log('  -> Downloading Microsoft.Web.WebView2 1.0.4258.31 NuGet package...');
+  const zipPath = join(CACHE, 'webview2-sdk.zip');
+  writeFileSync(zipPath, await download('https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.4258.31'));
+  run(tar, ['-x', '-f', zipPath, '-C', sdk]);
+  rmSync(zipPath, { force: true });
+}
+
 {
-  const sdk = resolve(process.env.WEBVIEW2_SDK || join(ROOT, '.installer-cache', 'webview2-sdk', 'pkg'));
-  const pinned = {
-    'lib/net462/Microsoft.Web.WebView2.Core.dll': 'd60e6e94245078cb56e44ebd5f360dc04bf18e460136be93bfc4cfca43b98505',
-    'lib/net462/Microsoft.Web.WebView2.WinForms.dll': '6a9e6856f23c463783c3afb0ca5d78f56324c86657162ccb16d5227b3233b32a',
-    'runtimes/win-x64/native/WebView2Loader.dll': '3426dcc55fdfb8b5e7ac623cf33b4ccf283fbf68a0c5a65bddfdb4d749a8abee',
-  };
   for (const [rel, sha] of Object.entries(pinned)) {
     const src = join(sdk, rel);
     if (!existsSync(src)) fail(`${src} is missing. Unpack the NuGet package Microsoft.Web.WebView2 1.0.4258.31 there, or set WEBVIEW2_SDK=<folder>.`);
@@ -144,12 +155,15 @@ if (arg('version')) {
 
 // Microsoft's WebView2 Runtime installer (Evergreen bootstrapper, from
 // https://go.microsoft.com/fwlink/p/?LinkId=2124703), which Setup runs only on
-// a PC without the runtime. Checked: this SHA-256 (a newer download needs a
-// new hash here) and a valid Microsoft Corporation signature.
+// a PC without the runtime. Checked: valid Microsoft Corporation signature.
 // WEBVIEW2_BOOTSTRAPPER=<file> or .installer-cache/webview2-bootstrapper/.
 const bootstrapper = resolve(process.env.WEBVIEW2_BOOTSTRAPPER || join(ROOT, '.installer-cache', 'webview2-bootstrapper', 'MicrosoftEdgeWebview2Setup.exe'));
+if (!existsSync(bootstrapper)) {
+  console.log('  -> Downloading Microsoft WebView2 Evergreen bootstrapper...');
+  mkdirSync(join(bootstrapper, '..'), { recursive: true });
+  writeFileSync(bootstrapper, await download('https://go.microsoft.com/fwlink/p/?LinkId=2124703'));
+}
 {
-  if (!existsSync(bootstrapper)) fail(`${bootstrapper} is missing. Download it from https://go.microsoft.com/fwlink/p/?LinkId=2124703, or set WEBVIEW2_BOOTSTRAPPER=<file>.`);
   const sha = createHash('sha256').update(readFileSync(bootstrapper)).digest('hex');
   console.log(`  -> WebView2 bootstrapper SHA-256: ${sha}`);
   const sig = execFileSync('powershell.exe', ['-NoProfile', '-Command', `$s = Get-AuthenticodeSignature -LiteralPath '${bootstrapper.replace(/'/g, "''")}'; [string]$s.Status + '|' + $s.SignerCertificate.Subject`], { encoding: 'utf8' }).trim();
