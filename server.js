@@ -1467,18 +1467,45 @@ app.get('/api/check-update', async (req, res) => {
   }
 
   try {
-    const response = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
-      headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
-      signal: AbortSignal.timeout(10000),
-    });
+    let tag = '';
+    let notes = '';
+    let htmlUrl = '';
+    let zipUrl = 'https://github.com/hasankhan10/quickgst-billing/releases/latest/download/QuickGST-Billing.zip';
 
-    if (!response.ok) {
+    try {
+      const response = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
+        headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (response.ok) {
+        const rel = await response.json();
+        tag = (rel.tag_name || '').replace(/^v/, '').trim();
+        notes = rel.body || '';
+        htmlUrl = rel.html_url || '';
+        const za = rel.assets?.find(a => a.name.endsWith('.zip'));
+        if (za?.browser_download_url) zipUrl = za.browser_download_url;
+      }
+    } catch {}
+
+    if (!tag) {
+      const webRes = await fetch('https://github.com/hasankhan10/quickgst-billing/releases/latest', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(8000),
+      });
+      const loc = webRes.headers.get('location') || '';
+      const match = /\/tag\/v?([0-9.]+)/i.exec(loc);
+      if (match) {
+        tag = match[1];
+        htmlUrl = `https://github.com/hasankhan10/quickgst-billing/releases/tag/v${tag}`;
+      }
+    }
+
+    if (!tag) {
       if (updateCache) return res.json(updateCache);
       return res.status(502).json({ error: 'Could not fetch updates from GitHub' });
     }
 
-    const rel = await response.json();
-    const tag = (rel.tag_name || '').replace(/^v/, '').trim();
     const current = (pkg.version || '1.0.0').replace(/^v/, '').trim();
 
     const compareVersions = (v1, v2) => {
@@ -1494,15 +1521,14 @@ app.get('/api/check-update', async (req, res) => {
     };
 
     const updateAvailable = compareVersions(tag, current) > 0;
-    const zipAsset = rel.assets?.find(a => a.name.endsWith('.zip'));
 
     updateCache = {
       current,
       latest: tag,
       updateAvailable,
-      releaseNotes: rel.body || '',
-      releaseUrl: rel.html_url || `https://github.com/hasankhan10/quickgst-billing/releases/tag/${rel.tag_name}`,
-      zipUrl: zipAsset?.browser_download_url || null,
+      releaseNotes: notes,
+      releaseUrl: htmlUrl || `https://github.com/hasankhan10/quickgst-billing/releases/tag/v${tag}`,
+      zipUrl,
     };
     updateCacheTime = now;
 
@@ -1710,16 +1736,22 @@ async function updateWithSetup() {
     // whole update can be tried without publishing a release.
     fs.copyFileSync(path.join(INSTALL_TEST_ROOT, SETUP_NAME), exe);
   } else {
-    let asset;
+    let asset = null;
     try {
       const rel = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
-        signal: AbortSignal.timeout(20000), headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'FreeGSTBill-updater' },
+        signal: AbortSignal.timeout(8000), headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'QuickGST-Updater' },
       });
-      asset = rel.ok ? setupAssetFrom(await rel.json()) : null;
-    } catch {
-      throw new Error('GitHub could not be reached. Check the internet connection and try again.');
+      if (rel.ok) asset = setupAssetFrom(await rel.json());
+    } catch {}
+
+    if (!asset) {
+      asset = {
+        url: `https://github.com/hasankhan10/quickgst-billing/releases/latest/download/${SETUP_NAME}`,
+        size: 0,
+        sha256: ''
+      };
     }
-    if (!asset) throw new Error(`The new version's Setup is not on GitHub yet. Try again later, or download ${SETUP_NAME} from the Releases page.`);
+
     let res;
     try { res = await fetchFromGitHub(asset.url, 15 * 60 * 1000); } catch (e) {
       throw new Error(e.message.startsWith('The download') ? e.message : 'The new version could not be downloaded. Check the internet connection and try again.');
@@ -1742,16 +1774,19 @@ async function updateWithSetup() {
 
 
 async function performAutoUpdate() {
-  const relRes = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
-    headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!relRes.ok) throw new Error('Could not reach GitHub to fetch update details.');
-  const rel = await relRes.json();
-  const zipAsset = (rel.assets || []).find(a => a.name && a.name.endsWith('.zip'));
-  if (!zipAsset) throw new Error('Release ZIP package not found on GitHub.');
+  let zipUrl = 'https://github.com/hasankhan10/quickgst-billing/releases/latest/download/QuickGST-Billing.zip';
+  try {
+    const relRes = await fetch('https://api.github.com/repos/hasankhan10/quickgst-billing/releases/latest', {
+      headers: { 'User-Agent': 'QuickGST-Updater', Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (relRes.ok) {
+      const rel = await relRes.json();
+      const zipAsset = (rel.assets || []).find(a => a.name && a.name.endsWith('.zip'));
+      if (zipAsset?.browser_download_url) zipUrl = zipAsset.browser_download_url;
+    }
+  } catch {}
 
-  const zipUrl = zipAsset.browser_download_url;
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qgst-update-'));
   const zipFile = path.join(tempDir, 'update.zip');
 
