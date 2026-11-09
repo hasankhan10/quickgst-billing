@@ -22,7 +22,7 @@ param([switch]$AppWindow, [switch]$Hidden, [switch]$NoWindow, [switch]$PrintUrl)
 if ($PrintUrl) { try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { } }
 
 $ErrorActionPreference = 'Continue'
-$Host.UI.RawUI.WindowTitle = 'Free GST Billing - Server'
+$Host.UI.RawUI.WindowTitle = 'QuickGST Billing - Server'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SystemDir = $ScriptDir

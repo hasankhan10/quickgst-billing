@@ -68,11 +68,11 @@ try { makeDir(DATA_DIR); } catch { /* reported below */ }
   const lock = await acquireLock(LOCK_FILE, { pid: process.pid, host: LOCK_HOST, id: LOCK_ID, identify: portIdentity });
   if (!lock.ok) {
     if (lock.reason === 'other-host') {
-      console.log(`\n  These books are open in Free GST Billing on another computer (${lock.held.host}).`);
+      console.log(`\n  These books are open in QuickGST Billing on another computer (${lock.held.host}).`);
       console.log(`  Close the app there first. If it is not running there, delete ${LOCK_FILE} and open the app again.\n`);
       process.exit(1);
     }
-    console.log(`\n  Free GST Billing is already running for these books${lock.held?.port ? ` at http://localhost:${lock.held.port}` : ''} (process ${lock.held?.pid}).`);
+    console.log(`\n  QuickGST Billing is already running for these books${lock.held?.port ? ` at http://localhost:${lock.held.port}` : ''} (process ${lock.held?.pid}).`);
     console.log('  Not starting a second copy: two copies would overwrite each other\'s changes.\n');
     process.exit(0);
   }
@@ -177,7 +177,7 @@ try {
   const why = err.code === 'ENOSPC' ? 'The disk is full. Free some space and open the app again.'
     : (err.code === 'EACCES' || err.code === 'EPERM') ? 'The app is not allowed to write to its data folder. Move the app folder to Documents (not Program Files), or allow it in your antivirus.'
       : `The data folder could not be created (${err.code || err.message}).`;
-  console.error(`\n  Free GST Billing cannot start: ${why}\n  Data folder: ${DATA_DIR}\n  Help: https://dicecodes.com/free-gst-software-documentation/troubleshooting.html#${err.code === 'ENOSPC' ? 'disk-full' : 'no-permission'}\n`);
+  console.error(`\n  QuickGST Billing cannot start: ${why}\n  Data folder: ${DATA_DIR}\n  Help: https://stovamedia.in/contact\n`);
   try { fs.appendFileSync(path.join(DATA_DIR, 'errors.log'), `[${new Date().toISOString()}] [startup] ${why} ${err.code || ''}\n`, 'utf-8'); } catch { /* the folder is the problem */ }
   process.exit(1);
 }
@@ -2394,7 +2394,7 @@ app.get('{*path}', (req, res) => {
 function servePlaceholder(req, res) {
     if (req.path.startsWith('/api')) return res.status(404).json({ error: 'No such endpoint' });
     res.status(503).send(`<!doctype html>
-<html><head><meta charset="utf-8"><title>Free GST Billing Software — building…</title>
+<html><head><meta charset="utf-8"><title>QuickGST Billing — building…</title>
 <meta http-equiv="refresh" content="3">
 <style>
   body { font-family: -apple-system, Segoe UI, Inter, sans-serif; max-width: 560px;
@@ -2409,7 +2409,7 @@ function servePlaceholder(req, res) {
   .box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem 1rem; border-radius: 8px; margin-top: 1rem; }
 </style></head>
 <body>
-  <h1>Free GST Billing Software</h1>
+  <h1>QuickGST Billing</h1>
   <p><span class="spinner"></span> The app is still building. This page refreshes every 3 seconds.</p>
   <div class="box">
     <p style="margin:0 0 0.5rem"><strong>Local install?</strong></p>
@@ -2516,8 +2516,9 @@ function startServer(port) {
     try { fs.writeFileSync(PORT_FILE, String(port), 'utf-8'); } catch { /* ignore */ }
     // v1.10.84 - the lock now says where this server answers.
     writeLock(LOCK_FILE, { pid: process.pid, port: server.address().port, at: Date.now(), host: LOCK_HOST, id: LOCK_ID });
-    console.log(`\n  Free GST Billing Software running at http://localhost:${port}`);
-    console.log(`  Data stored in: ${DATA_DIR}\n`);
+    console.log(`\n  QuickGST Billing running at http://localhost:${port}`);
+    console.log(`  Data stored in: ${DATA_DIR}`);
+    console.log(`  Support / WhatsApp: +91 94320 53261 (stovamedia.in/contact)\n`);
   });
   server.on('error', (err) => {
     // v1.10.83 - EACCES too: Windows reserves port ranges for Hyper-V / WSL

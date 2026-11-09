@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Code, Wrench, Database, LifeBuoy, Smartphone, Check, Copy, Mail, Globe, Printer } from 'lucide-react';
+import { ShieldCheck, Code, Wrench, Database, LifeBuoy, Smartphone, Check, Copy, Mail, Globe, Printer, MessageSquare, Phone } from 'lucide-react';
 import { toast } from './Toast';
 import WhatsNew from './WhatsNew';
 import ProblemLog from './ProblemLog';
@@ -7,6 +7,8 @@ import { SafePrivateSection } from './SafePrivateNote';
 
 const EMAIL = 'support@stovamedia.in';
 const SITE = 'https://stovamedia.in/contact';
+const PHONE = '+91 94320 53261';
+const WHATSAPP_URL = 'https://wa.me/919432053261?text=Hi%2C%20I%20need%20support%20for%20QuickGST%20Billing';
 
 const SERVICES = [
   { icon: Printer, title: 'POS & Thermal Setup', text: '58mm/80mm thermal receipt printer and barcode scanner configuration.' },
@@ -69,14 +71,17 @@ export default function SupportView() {
           ))}
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-primary" onClick={copyEmail} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            {copied ? <><Check size={16} /> Copied Email</> : <><Copy size={16} /> Contact Support ({EMAIL})</>}
+          <a className="btn btn-primary" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#16a34a', borderColor: '#16a34a', color: '#fff' }}>
+            <MessageSquare size={16} /> WhatsApp ({PHONE})
+          </a>
+          <button type="button" className="btn btn-secondary" onClick={copyEmail} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            {copied ? <><Check size={16} /> Copied Email</> : <><Copy size={16} /> Copy Email ({EMAIL})</>}
           </button>
           <a className="btn btn-secondary" href={`mailto:${EMAIL}?subject=${encodeURIComponent('QuickGST Support & Setup Enquiry')}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
             <Mail size={16} /> Send Email
           </a>
           <a className="btn btn-secondary" href={SITE} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Globe size={16} /> Stova Media
+            <Globe size={16} /> stovamedia.in
           </a>
         </div>
       </div>
