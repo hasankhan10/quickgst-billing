@@ -931,7 +931,7 @@ function App() {
           <div className={`sidebar-logo${ownBrand && brand.logo ? ' sidebar-logo-own' : ''}`}>
             {ownBrand && brand.logo ? <img src={brand.logo} alt="" />
               : ownBrand ? <span className="sidebar-logo-letter">{brand.businessName.trim().charAt(0).toUpperCase()}</span>
-                : <img src="/favicon.svg" alt="QuickGST" width={28} height={28} style={{ borderRadius: 6 }} />}
+                : <img src="/logo.png" alt="QuickGST" width={38} height={38} style={{ borderRadius: 9, display: 'block' }} />}
           </div>
           {/* "by DiceCodes" always stays, under their name too. "Free forever" is
               in the top bar; on a phone (no top bar) it stays here. */}
