@@ -251,7 +251,7 @@ function Install-App {
     }
     $inner = Get-ChildItem -LiteralPath $unpacked -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName '_system\server.js') } | Select-Object -First 1
     if (-not $inner -or -not (Test-Path -LiteralPath (Join-Path $inner.FullName '_system\node_modules\express\package.json'))) {
-      Fail 'The downloaded file is not a complete Free GST Billing package.' 'Run the same line again. If it happens again, report it: https://github.com/IamRamgarhia/Free-GST-Billing-Software/issues'
+      Fail 'The downloaded file is not a complete QuickGST Billing package.' 'Run the same line again. If it happens again, report it: https://github.com/hasankhan10/quickgst-billing/issues'
     }
     $newSys = Join-Path $inner.FullName '_system'
     $backup = if ($isUpdate) { Backup-Data $sys } else { $null }

@@ -7,7 +7,7 @@
 # extract folder again.
 
 $ErrorActionPreference = 'Continue'
-$Host.UI.RawUI.WindowTitle = 'Free GST Billing - Installer'
+$Host.UI.RawUI.WindowTitle = 'QuickGST Billing - Installer'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SystemDir = $ScriptDir
@@ -15,7 +15,7 @@ $RootDir   = Split-Path -Parent $ScriptDir
 
 Write-Host ''
 Write-Host '  ============================================================'
-Write-Host '   Free GST Billing Software - Installer'
+Write-Host '   QuickGST Billing Software - Installer'
 Write-Host '  ============================================================'
 Write-Host ''
 
