@@ -35,13 +35,11 @@ const RecurringInvoices = lazy(() => import('./components/RecurringInvoices'));
 const ReceiptVoucher = lazy(() => import('./components/ReceiptVoucher'));
 const CashBook = lazy(() => import('./components/CashBook'));
 const GSTReturns = lazy(() => import('./components/GSTReturns'));
-const IncomeTax = lazy(() => import('./components/IncomeTax'));
 const PurchaseBills = lazy(() => import('./components/PurchaseBills'));
 const ControlPanel = lazy(() => import('./components/ControlPanel'));
 import StarBanner from './components/StarBanner';
 import AppFooter from './components/AppFooter';
 import LockButton from './components/LockButton';
-import OfflineModeButton from './components/OfflineModeButton';
 import { isOfflineMode } from './utils/offlineMode';
 import HelpButton from './components/HelpButton';
 import { lockNow } from './utils/appLock';
@@ -81,7 +79,7 @@ function App() {
       const params = new URLSearchParams(window.location.search);
       const v = params.get('view');
       // v1.10.74 - 'controlpanel' added so ?view=controlpanel deep links work too.
-      const valid = ['dashboard', 'new', 'clients', 'inventory', 'expenses', 'purchases', 'recurring', 'receipts', 'cashbook', 'reports', 'filing', 'incometax', 'settings', 'controlpanel'];
+      const valid = ['dashboard', 'new', 'clients', 'inventory', 'expenses', 'purchases', 'recurring', 'receipts', 'cashbook', 'reports', 'filing', 'settings', 'controlpanel'];
       if (v && valid.includes(v)) {
         // Strip the query string so a refresh doesn't keep snapping back to
         // the shortcut target — only the *first* navigation honours it.
@@ -538,7 +536,7 @@ function App() {
   // If the user just disabled the module backing the current view, kick them to dashboard
   // so they don't land on an empty page after toggling.
   useEffect(() => {
-    const map = { new: 'invoicing', clients: 'clients', inventory: 'inventory', expenses: 'expenses', purchases: 'purchases', recurring: 'recurring', receipts: 'receipts', cashbook: 'cashBook', reports: 'reports', filing: 'gstReturns', incometax: 'incomeTax' };
+    const map = { new: 'invoicing', clients: 'clients', inventory: 'inventory', expenses: 'expenses', purchases: 'purchases', recurring: 'recurring', receipts: 'receipts', cashbook: 'cashBook', reports: 'reports', filing: 'gstReturns' };
     const moduleForView = map[currentView];
     if (moduleForView && !isModuleEnabled(moduleForView, enabledModules)) {
       setCurrentView('dashboard');
@@ -560,7 +558,6 @@ function App() {
     cashbook: { icon: Banknote, label: 'Cash book' },
     reports: { icon: BarChart3, label: 'Reports' },
     filing: { icon: BookOpen, label: 'GST Returns' },
-    incometax: { icon: Calculator, label: 'Income Tax' },
     // v1.10.75 - opens the online documentation, which covers every screen
     // and stays current; the old built-in guide had fallen far behind.
     guide: { icon: HelpCircle, label: 'User Guide', onClick: openDocs },
@@ -604,11 +601,6 @@ function App() {
     ),
     /* v1.10.80 (#98) - only when a PIN is set. */
     lock: <LockButton key={id} className="topbar-btn" label={null} />,
-    /* v1.10.83 - Offline mode on / off, and what it changes. */
-    offline: <OfflineModeButton key={id} className="topbar-btn" onOpenSettings={() => {
-      try { sessionStorage.setItem('gst_settingsTab', 'section-privacy'); } catch { /* storage blocked */ }
-      setCurrentView('settings');
-    }} />,
     darkMode: (
       <button key={id} type="button" className="topbar-btn" onClick={() => setDarkMode(d => !d)}
         title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} aria-label={darkMode ? 'Light mode' : 'Dark mode'}>
@@ -1144,9 +1136,6 @@ function App() {
         )}
         {currentView === 'filing' && (
           <GSTReturns key={businessKey} />
-        )}
-        {currentView === 'incometax' && (
-          <IncomeTax key={businessKey} />
         )}
         {currentView === 'settings' && (
           <SettingsView onSaved={(p) => setProfile(p)} />
