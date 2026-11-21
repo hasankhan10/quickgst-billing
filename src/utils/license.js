@@ -12,12 +12,34 @@ let cachedMachineId = null;
 export function getRawHardwareId() {
   try {
     if (process.platform === 'win32') {
-      const out = execSync('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"', {
-        encoding: 'utf8',
-        timeout: 3000,
-        windowsHide: true,
-      }).trim();
-      if (out && out.length > 8 && !out.toLowerCase().includes('error')) return out;
+      let machineGuid = '';
+      try {
+        const reg = execSync('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid', {
+          encoding: 'utf8',
+          timeout: 2000,
+          windowsHide: true,
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
+        const m = reg.match(/MachineGuid\s+REG_SZ\s+([A-Fa-f0-9\-]+)/);
+        if (m) machineGuid = m[1].trim();
+      } catch {
+        /* ignore */
+      }
+
+      let biosUuid = '';
+      try {
+        biosUuid = execSync('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"', {
+          encoding: 'utf8',
+          timeout: 3000,
+          windowsHide: true,
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
+      } catch {
+        /* ignore */
+      }
+
+      const combined = `${machineGuid || ''}|${biosUuid || ''}`;
+      if (combined.length > 10) return combined;
     } else if (process.platform === 'darwin') {
       const out = execSync("ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/ { print $3; }'", {
         encoding: 'utf8',
@@ -39,7 +61,6 @@ export function getMachineId() {
   if (cachedMachineId) return cachedMachineId;
   const raw = getRawHardwareId();
   const hash = crypto.createHash('sha256').update(raw).digest('hex').toUpperCase();
-  // Format as MCH-XXXX-XXXX
   cachedMachineId = `MCH-${hash.slice(0, 4)}-${hash.slice(4, 8)}`;
   return cachedMachineId;
 }
@@ -57,61 +78,245 @@ export function verifyLicenseKey(machineId, key) {
   return normalize(expected) === normalize(key);
 }
 
+function getCipherKey(machineId) {
+  return crypto.createHash('sha256').update(`${machineId}:${MASTER_SECRET}`).digest();
+}
+
+function encryptRecord(record, machineId) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', getCipherKey(machineId), iv);
+  const data = Buffer.from(JSON.stringify(record), 'utf8');
+  const enc = Buffer.concat([cipher.update(data), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, enc]).toString('base64');
+}
+
+function decryptRecord(str, machineId) {
+  try {
+    const buf = Buffer.from(str, 'base64');
+    if (buf.length < 28) return null;
+    const iv = buf.subarray(0, 12);
+    const tag = buf.subarray(12, 28);
+    const enc = buf.subarray(28);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', getCipherKey(machineId), iv);
+    decipher.setAuthTag(tag);
+    const dec = Buffer.concat([decipher.update(enc), decipher.final()]);
+    return JSON.parse(dec.toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function getExternalAnchorPaths() {
+  const paths = [];
+  if (process.env.APPDATA) paths.push(path.join(process.env.APPDATA, 'QuickGST', '.license.dat'));
+  if (process.env.LOCALAPPDATA) paths.push(path.join(process.env.LOCALAPPDATA, 'QuickGST', '.trial.dat'));
+  try {
+    paths.push(path.join(os.homedir(), '.quickgst_sys.dat'));
+  } catch {
+    /* ignore */
+  }
+  return paths;
+}
+
+function readRegistryRecord(machineId) {
+  if (process.platform !== 'win32') return null;
+  try {
+    const out = execSync('reg query "HKCU\\Software\\QuickGST" /v Registration', {
+      encoding: 'utf8',
+      timeout: 2000,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const m = out.match(/Registration\s+REG_SZ\s+(\S+)/);
+    if (m && m[1]) return decryptRecord(m[1].trim(), machineId);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function writeRegistryRecord(record, machineId) {
+  if (process.platform !== 'win32') return;
+  try {
+    const enc = encryptRecord(record, machineId);
+    execSync(`reg add "HKCU\\Software\\QuickGST" /v Registration /t REG_SZ /d "${enc}" /f`, {
+      timeout: 2000,
+      windowsHide: true,
+      stdio: ['ignore', 'ignore', 'ignore'],
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+function readFileRecord(filePath, machineId) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const raw = fs.readFileSync(filePath, 'utf8').trim();
+    if (raw.startsWith('{')) {
+      const parsed = JSON.parse(raw);
+      if (parsed.enc) {
+        const dec = decryptRecord(parsed.enc, machineId);
+        if (dec) return dec;
+      }
+      return parsed;
+    }
+    return decryptRecord(raw, machineId);
+  } catch {
+    return null;
+  }
+}
+
+function writeFileRecord(filePath, record, machineId) {
+  try {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const enc = encryptRecord(record, machineId);
+    if (filePath.endsWith('.json')) {
+      fs.writeFileSync(filePath, JSON.stringify({ ...record, enc }, null, 2), 'utf8');
+    } else {
+      fs.writeFileSync(filePath, enc, 'utf8');
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+// Data-anchor check: if all external anchors were deleted, check oldest existing bill date
+function getOldestBillTimestamp(dataDir) {
+  try {
+    if (!dataDir) return null;
+    const billsDir = path.join(dataDir, 'bills');
+    if (!fs.existsSync(billsDir)) return null;
+    const files = fs.readdirSync(billsDir).filter((f) => f.endsWith('.json'));
+    let oldest = null;
+    for (const f of files) {
+      try {
+        const stat = fs.statSync(path.join(billsDir, f));
+        const birth = stat.birthtimeMs || stat.mtimeMs;
+        if (!oldest || birth < oldest) oldest = birth;
+      } catch {
+        /* skip */
+      }
+    }
+    return oldest;
+  } catch {
+    return null;
+  }
+}
+
 export function getLicenseStatus(dataDir) {
   const machineId = getMachineId();
-  const licFile = path.join(dataDir, '.license.json');
+  const localLicFile = dataDir ? path.join(dataDir, '.license.json') : null;
+  const externalPaths = getExternalAnchorPaths();
 
-  let state = { activated: false, trialStartedAt: null, key: null };
-  if (fs.existsSync(licFile)) {
-    try {
-      state = JSON.parse(fs.readFileSync(licFile, 'utf8'));
-    } catch {
-      // corrupt file
-    }
+  // Read all 5 anchor locations
+  const records = [];
+  const regRec = readRegistryRecord(machineId);
+  if (regRec) records.push({ source: 'registry', data: regRec });
+
+  for (const p of externalPaths) {
+    const fRec = readFileRecord(p, machineId);
+    if (fRec) records.push({ source: p, data: fRec });
   }
 
-  // Check if successfully activated on this exact machine
-  if (state.activated && state.key) {
-    if (verifyLicenseKey(machineId, state.key)) {
+  if (localLicFile) {
+    const locRec = readFileRecord(localLicFile, machineId);
+    if (locRec) records.push({ source: localLicFile, data: locRec });
+  }
+
+  // 1. Check if ANY anchor contains a valid lifetime license activation for this machine
+  for (const { data } of records) {
+    if (data.activated && data.key) {
+      if (verifyLicenseKey(machineId, data.key)) {
+        const activeRecord = {
+          activated: true,
+          key: data.key.trim().toUpperCase(),
+          machineId,
+          activatedAt: data.activatedAt || new Date().toISOString(),
+        };
+
+        // Self-heal: ensure all anchors have this activation saved
+        if (records.length < (externalPaths.length + (localLicFile ? 1 : 0) + (process.platform === 'win32' ? 1 : 0))) {
+          writeRegistryRecord(activeRecord, machineId);
+          for (const p of externalPaths) writeFileRecord(p, activeRecord, machineId);
+          if (localLicFile) writeFileRecord(localLicFile, activeRecord, machineId);
+        }
+
+        return {
+          licensed: true,
+          isTrial: false,
+          machineId,
+          activatedAt: activeRecord.activatedAt,
+          daysLeft: null,
+        };
+      }
+
+      // Cloned from a different computer
       return {
-        licensed: true,
+        licensed: false,
         isTrial: false,
         machineId,
-        activatedAt: state.activatedAt,
-        daysLeft: null,
+        daysLeft: 0,
+        reason: 'hardware-mismatch',
       };
     }
-    // Cloned to another machine!
-    return {
-      licensed: false,
-      isTrial: false,
-      machineId,
-      daysLeft: 0,
-      reason: 'hardware-mismatch',
-    };
   }
 
-  // First run: start trial
+  // 2. Trial evaluation: Find earliest start date and latest seen date across all anchors
   const now = Date.now();
-  if (!state.trialStartedAt) {
-    state.trialStartedAt = now;
-    try {
-      fs.writeFileSync(licFile, JSON.stringify(state, null, 2), 'utf8');
-    } catch {
-      /* ignore */
+  let earliestStart = null;
+  let latestSeen = 0;
+
+  for (const { data } of records) {
+    if (data.trialStartedAt) {
+      const t = Number(data.trialStartedAt);
+      if (!Number.isNaN(t) && (!earliestStart || t < earliestStart)) earliestStart = t;
+    }
+    if (data.lastSeenAt) {
+      const ls = Number(data.lastSeenAt);
+      if (!Number.isNaN(ls) && ls > latestSeen) latestSeen = ls;
     }
   }
 
-  const elapsedMs = now - Number(state.trialStartedAt);
+  // If no anchor records exist, check existing data (bills) to prevent clean reinstall wipe
+  if (!earliestStart) {
+    const oldestBillTime = getOldestBillTimestamp(dataDir);
+    if (oldestBillTime && oldestBillTime < now) {
+      earliestStart = oldestBillTime;
+    } else {
+      // Genuinely clean first install on this machine
+      earliestStart = now;
+    }
+  }
+
+  // Anti-rollback check: if clock is rolled back by > 5 minutes, enforce latestSeen
+  const effectiveNow = (latestSeen && now < (latestSeen - 300_000)) ? latestSeen : now;
+  const updatedLastSeen = Math.max(latestSeen, now);
+
+  const elapsedMs = Math.max(0, effectiveNow - earliestStart);
   const daysLeft = Math.max(0, TRIAL_DAYS - Math.floor(elapsedMs / 86400000));
   const isTrial = daysLeft > 0;
+
+  // Persist updated trial state across all anchors (Registry, AppData, LocalAppData, UserProfile, DataDir)
+  const trialRecord = {
+    activated: false,
+    trialStartedAt: earliestStart,
+    lastSeenAt: updatedLastSeen,
+    machineId,
+  };
+
+  writeRegistryRecord(trialRecord, machineId);
+  for (const p of externalPaths) writeFileRecord(p, trialRecord, machineId);
+  if (localLicFile) writeFileRecord(localLicFile, trialRecord, machineId);
 
   return {
     licensed: false,
     isTrial,
     daysLeft,
     machineId,
-    trialStartedAt: state.trialStartedAt,
+    trialStartedAt: earliestStart,
   };
 }
 
@@ -121,7 +326,6 @@ export function activateLicense(dataDir, key) {
     return { success: false, error: 'Invalid license key for this computer. Please check and try again.' };
   }
 
-  const licFile = path.join(dataDir, '.license.json');
   const payload = {
     activated: true,
     key: key.trim().toUpperCase(),
@@ -129,6 +333,14 @@ export function activateLicense(dataDir, key) {
     activatedAt: new Date().toISOString(),
   };
 
-  fs.writeFileSync(licFile, JSON.stringify(payload, null, 2), 'utf8');
-  return { success: true, message: 'QuickGST Billing has been successfully activated!' };
+  // Write activation permanently to ALL 5 anchors
+  writeRegistryRecord(payload, machineId);
+  for (const p of getExternalAnchorPaths()) {
+    writeFileRecord(p, payload, machineId);
+  }
+  if (dataDir) {
+    writeFileRecord(path.join(dataDir, '.license.json'), payload, machineId);
+  }
+
+  return { success: true, message: 'QuickGST Billing has been successfully activated for lifetime use!' };
 }

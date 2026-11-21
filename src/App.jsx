@@ -479,6 +479,11 @@ function App() {
     try { localStorage.setItem('freegstbill_sidebarAutoHide', on ? '1' : '0'); } catch { /* private mode */ }
   };
   const handleNewInvoice = () => {
+    if (licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial) {
+      setShowLicenseModal(true);
+      toast('Trial expired. You can view existing invoices, but creating new ones requires a license key.', 'error');
+      return;
+    }
     setEditorKey((k) => k + 1);
     sessionStorage.removeItem('gst_invoiceDraft');
     setEditingBill(null);
@@ -503,6 +508,11 @@ function App() {
   };
 
   const handleDuplicateInvoice = (bill) => {
+    if (licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial) {
+      setShowLicenseModal(true);
+      toast('Trial expired. Creating new invoices requires an active license key.', 'error');
+      return;
+    }
     setEditorKey((k) => k + 1);
     sessionStorage.removeItem('gst_invoiceDraft');
     const clone = JSON.parse(JSON.stringify(bill));
@@ -512,6 +522,11 @@ function App() {
   };
 
   const handleConvertToInvoice = (bill) => {
+    if (licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial) {
+      setShowLicenseModal(true);
+      toast('Trial expired. Creating new invoices requires an active license key.', 'error');
+      return;
+    }
     setEditorKey((k) => k + 1);
     sessionStorage.removeItem('gst_invoiceDraft');
     const clone = JSON.parse(JSON.stringify(bill));
@@ -1081,11 +1096,33 @@ function App() {
               title="Click to view license status"
             >
               <KeyRound size={12} />
-              {licenseStatus.licensed ? 'PRO LIFETIME' : licenseStatus.isTrial ? `TRIAL (${licenseStatus.daysLeft}d)` : 'LOCKED'}
+              {licenseStatus.licensed ? 'PRO LIFETIME' : licenseStatus.isTrial ? `TRIAL (${licenseStatus.daysLeft}d left)` : 'TRIAL EXPIRED (VIEW-ONLY)'}
             </button>
           )}
           {topActions}
         </div>
+        {licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial && (
+          <div style={{
+            background: '#fef2f2', borderBottom: '1px solid #fecaca', color: '#991b1b',
+            padding: '0.6rem 1.25rem', fontSize: '0.84rem', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0 }} />
+              <span>
+                <strong>7-Day Free Trial Expired (View-Only Mode)</strong> — You can view, search, and print all previous invoices. Creating new invoices requires a lifetime license.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLicenseModal(true)}
+              className="btn btn-primary"
+              style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+            >
+              Enter License Key
+            </button>
+          </div>
+        )}
         {/* v1.10.83 - a screen that throws shows "ran into a problem" here
             instead of blanking the app; keyed by screen so the sidebar works
             and opening another screen starts clean. */}
@@ -1396,7 +1433,6 @@ function App() {
           licenseStatus={licenseStatus}
           onRefresh={fetchLicense}
           onClose={() => setShowLicenseModal(false)}
-          forceOpen={licenseStatus && !licenseStatus.licensed && !licenseStatus.isTrial}
         />
       )}
     </div>

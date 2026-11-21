@@ -63,7 +63,7 @@ export default function LicenseModal({ licenseStatus, onRefresh, onClose, forceO
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>QuickGST Billing · Stova Media</p>
             </div>
           </div>
-          {!forceOpen && onClose && (
+          {onClose && (
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
               <X size={18} />
             </button>
@@ -97,8 +97,8 @@ export default function LicenseModal({ licenseStatus, onRefresh, onClose, forceO
             <>
               <AlertTriangle size={24} style={{ color: '#dc2626', flexShrink: 0 }} />
               <div>
-                <strong style={{ color: '#991b1b', fontSize: '0.9rem' }}>Trial Expired - Activation Required</strong>
-                <div style={{ fontSize: '0.78rem', color: '#b91c1c' }}>Please enter your activation key to continue creating invoices.</div>
+                <strong style={{ color: '#991b1b', fontSize: '0.9rem' }}>Trial Expired — View-Only Mode</strong>
+                <div style={{ fontSize: '0.78rem', color: '#b91c1c' }}>You can view, search, and print existing invoices. Enter a key to create new invoices.</div>
               </div>
             </>
           )}
@@ -159,13 +159,13 @@ export default function LicenseModal({ licenseStatus, onRefresh, onClose, forceO
             <div style={{ fontWeight: 600, marginBottom: '0.3rem', color: 'var(--text-primary)' }}>Need an activation key?</div>
             <div>Send your Machine ID to <strong>Stova Media</strong> via WhatsApp to receive your lifetime activation key.</div>
             <a
-              href={`https://wa.me/?text=${waMessage}`}
+              href={`https://wa.me/919432053261?text=${waMessage}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-success"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.6rem', fontSize: '0.82rem', padding: '0.4rem 0.85rem' }}
             >
-              <MessageCircle size={15} /> Send Machine ID via WhatsApp
+              <MessageCircle size={15} /> Send Machine ID via WhatsApp (+91 94320 53261)
             </a>
           </div>
         )}

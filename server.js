@@ -349,6 +349,18 @@ app.post('/api/bills', (req, res) => {
   const bill = req.body;
   if (!bill || !bill.id) return res.status(400).json({ error: 'Bill must have an id' });
   const filePath = path.join(DATA_DIR, 'bills', safeFileName(bill.id) + '.json');
+  const isExisting = fs.existsSync(filePath);
+
+  // Trial enforcement: existing bills can be viewed or updated, but creating NEW bills requires active license or trial
+  if (!isExisting) {
+    const lic = getLicenseStatus(DATA_DIR);
+    if (!lic.licensed && !lic.isTrial) {
+      return res.status(403).json({
+        error: 'Your 7-day free trial has expired. You can view and print all existing invoices, but creating new invoices requires a lifetime license.',
+        code: 'TRIAL_EXPIRED',
+      });
+    }
+  }
 
   // Dupe-check: the invoice-number field is free-text on the client, so a
   // typo (INV/2026/0007 typed again for a fresh bill) would silently

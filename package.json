@@ -1,6 +1,6 @@
 {
   "name": "quickgst-billing",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "QuickGST Billing Software - Indian GST Edition, Built by Stova Media.",
   "author": "Stova Media <support@stovamedia.in>",
   "license": "MIT",
@@ -74,6 +74,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "keygen": "node scripts/keygen.mjs",
     "server": "node server.js",
     "postinstall": "node scripts/bundle-tesseract-assets.mjs",
     "prebuild": "node scripts/bundle-tesseract-assets.mjs",
